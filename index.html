@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARCH_SYNC_FINAL_v5.3</title>
+    <title>ARCH_SYNC_FIXED_v5.6</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Noto+Sans+KR:wght@300;700&display=swap');
 
@@ -18,7 +18,14 @@
             margin: 0; background: #050505; color: #fff;
             font-family: 'Orbitron', 'Noto Sans KR', sans-serif;
             display: flex; flex-direction: column; align-items: center; min-height: 100vh;
-            padding: 20px; overflow-x: hidden;
+            padding: 20px; overflow-x: hidden; cursor: none;
+        }
+
+        /* ⭐ 커서 라이트 효과 (유지) */
+        .cursor-light {
+            position: fixed; width: 250px; height: 250px;
+            background: radial-gradient(circle, rgba(255,255,255,0.15), transparent 70%);
+            pointer-events: none; transform: translate(-50%, -50%); z-index: 10000;
         }
 
         #top-controls { margin-bottom: 20px; display: flex; gap: 15px; z-index: 5000; }
@@ -29,7 +36,7 @@
         }
         button:hover { background: var(--neon-cyan); color: #000; box-shadow: 0 0 20px var(--neon-cyan); }
 
-        /* 🚨 캡처 영역 (1200x800 고정) */
+        /* 캡처 영역 (1200x800 고정) */
         #capture {
             width: 1200px; height: 800px; background: #000;
             position: relative; padding: 40px; box-sizing: border-box;
@@ -42,28 +49,15 @@
             overflow: hidden;
         }
 
-        /* ⭐ 스캔라인 효과 */
         .scanline {
             position: absolute; width: 100%; height: 2px;
-            background: rgba(255,255,255,0.6); box-shadow: 0 0 20px white;
-            top: 0; animation: scan 2s linear infinite; pointer-events: none; z-index: 10;
+            background: rgba(255,255,255,0.4); box-shadow: 0 0 20px white;
+            top: 0; animation: scan 3s linear infinite; pointer-events: none; z-index: 10;
         }
-        @keyframes scan {
-            0% { top: 0; opacity: 0; }
-            10% { opacity: 1; }
-            50% { opacity: 0.7; }
-            100% { top: 100%; opacity: 0; }
-        }
+        @keyframes scan { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
 
-        /* ⭐ 글리치 효과 */
-        .glitch { position: relative; animation: glitch 0.3s infinite; color: #ff0044 !important; text-shadow: 2px 2px #00f2ff !important; }
-        @keyframes glitch {
-            0% { transform: translate(0); }
-            25% { transform: translate(-2px,2px); }
-            50% { transform: translate(2px,-2px); }
-            75% { transform: translate(-1px,1px); }
-            100% { transform: translate(0); }
-        }
+        .glitch { animation: glitch 0.2s infinite; color: #ff0044 !important; text-shadow: 2px 2px #00f2ff !important; }
+        @keyframes glitch { 0% { transform: translate(0); } 25% { transform: translate(-3px,2px); } 50% { transform: translate(3px,-2px); } 100% { transform: translate(0); } }
 
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #fff; padding-bottom: 15px; margin-bottom: 30px; }
         .header h1 { margin: 0; letter-spacing: 8px; font-size: 26px; text-shadow: 0 0 10px #fff; }
@@ -80,24 +74,23 @@
 
         .photo-frame { 
             width: 100%; aspect-ratio: 1/1; border: 1px solid rgba(255,255,255,0.2); 
-            overflow: hidden; background: url('「ARCH」 Symbol Logo White Ver.png') no-repeat center center / 50% #050505; 
+            overflow: hidden; background: url('「ARCH」 Symbol Logo White Ver.png') no-repeat center center / 40% #050505; 
         }
         .photo-frame img { width: 100%; height: 100%; object-fit: cover; }
 
-        .text-display { font-size: 24px; font-weight: 900; letter-spacing: 2px; border-bottom: 1px solid #444; padding-bottom: 5px; min-height: 35px; color: #fff; }
+        .text-display { font-size: 24px; font-weight: 900; letter-spacing: 2px; border-bottom: 1px solid #444; padding-bottom: 5px; color: #fff; }
         .attr-display { font-size: 15px; color: var(--arch-gold); font-family: 'Noto Sans KR'; margin-top: 5px; }
 
         .center-core { position: relative; text-align: center; }
         .arch-logo { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 480px; opacity: 0.15; pointer-events: none; }
-        .sync-val { font-size: 130px; font-weight: 900; line-height: 1; text-shadow: 0 0 40px #fff; margin: 20px 0; font-style: italic; position: relative; z-index: 1; }
-        .rank-badge { font-size: 26px; border: 2px solid #fff; padding: 8px 40px; box-shadow: 0 0 20px #fff; background: rgba(0,0,0,0.5); z-index: 1; position: relative; }
+        .sync-val { font-size: 130px; font-weight: 900; line-height: 1; text-shadow: 0 0 40px #fff; margin: 15px 0; font-style: italic; z-index: 1; position: relative; transition: 0.3s; }
+        #sync-status { font-size: 14px; color: var(--neon-cyan); letter-spacing: 3px; margin-bottom: 5px; font-weight: bold; }
+        .rank-badge { font-size: 26px; border: 2px solid #fff; padding: 8px 40px; box-shadow: 0 0 20px #fff; background: rgba(0,0,0,0.5); position: relative; z-index: 1; }
 
-        /* 하단 입력 UI */
-        .input-ui { display: flex; justify-content: center; gap: 25px; margin-top: 30px; width: 1200px; padding: 20px; background: rgba(255,255,255,0.05); border: 1px solid #333; }
+        .input-ui { display: flex; justify-content: center; gap: 25px; margin-top: 30px; width: 1200px; padding: 20px; background: rgba(255,255,255,0.05); border: 1px solid #333; z-index: 5000; }
         .ui-group { display: flex; gap: 12px; align-items: center; }
-        input[type=text], select { padding: 10px; background: #fff; border: none; font-weight: bold; font-family: 'Noto Sans KR'; }
+        input[type=text], select { padding: 10px; background: #fff; border: none; font-weight: bold; font-family: 'Noto Sans KR'; cursor: default; }
 
-        /* 에러 팝업 */
         .error-popup {
             position: absolute; width: 260px; background: #c0c0c0; border: 2px solid; border-color: #eee #888 #888 #eee; color: #000;
             padding: 2px; font-family: 'Tahoma', sans-serif; font-size: 11px; z-index: 1000; box-shadow: 10px 10px 20px rgba(0,0,0,0.5);
@@ -106,6 +99,8 @@
     </style>
 </head>
 <body>
+
+<div class="cursor-light" id="cursor"></div>
 
 <div id="top-controls">
     <button onclick="calcSync()">ANALYZE SYNC</button>
@@ -118,9 +113,9 @@
     <div id="error-container"></div>
 
     <div class="header">
-        <div style="font-size: 11px;">AUTH: OVERRIDE_v5.3</div>
-        <h1>SYNC_MONITOR // FINAL</h1>
-        <div style="font-size: 11px; color: var(--arch-gold);">STABLE_CONNECTION</div>
+        <div style="font-size: 11px;">AUTH: OVERRIDE_v5.6</div>
+        <h1>ARCH_SYNC_INTERFACE</h1>
+        <div style="font-size: 11px; color: var(--arch-gold);">SYSTEM_INTEGRITY: ACTIVE</div>
     </div>
 
     <div class="main-grid">
@@ -132,7 +127,7 @@
 
         <div class="center-core">
             <img src="「ARCH」 Symbol Logo White Ver.png" class="arch-logo">
-            <div style="font-size: 14px; color: var(--neon-cyan); letter-spacing: 5px;">SYNCHRONIZATION</div>
+            <div id="sync-status">INITIALIZING...</div>
             <div class="sync-val" id="percent">--%</div>
             <div class="rank-badge" id="rank">RANK --</div>
         </div>
@@ -176,34 +171,56 @@
 
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 <script>
-    // 이미지 업로드 및 엑박 방지
+    // 마우스 커서 라이트 로직
+    document.addEventListener('mousemove', (e) => {
+        const cursor = document.getElementById('cursor');
+        cursor.style.left = e.clientX + 'px';
+        cursor.style.top = e.clientY + 'px';
+    });
+
     file1.onchange = e => { img1.src = URL.createObjectURL(e.target.files[0]); img1.parentElement.style.background = 'none'; }
     file2.onchange = e => { img2.src = URL.createObjectURL(e.target.files[0]); img2.parentElement.style.background = 'none'; }
 
-    // 실시간 이름 동기화
     function syncName(id) {
         const val = document.getElementById('nameInput' + id).value;
         document.getElementById('outName' + id).innerText = val || 'SUBJECT_' + (id===1?'A':'B');
     }
 
-    // 속성 및 테마 실시간 반영 (무속성 포함)
     function updateTheme(id) {
         const select = document.getElementById('attrInput' + id);
-        const val = select.value;
-        const attrColors = { 
-            pyre: '#ff4d00', aqua: '#0088ff', verde: '#00ff66', 
-            fulmen: '#f2ff00', aero: '#00ffcc', glacies: '#a0e9ff', 
-            none: '#ffffff' // 무속성은 화이트
-        };
-        document.documentElement.style.setProperty('--theme-color' + id, attrColors[val]);
+        const attrColors = { pyre: '#ff4d00', aqua: '#0088ff', verde: '#00ff66', fulmen: '#f2ff00', aero: '#00ffcc', glacies: '#a0e9ff', none: '#ffffff' };
+        document.documentElement.style.setProperty('--theme-color' + id, attrColors[select.value]);
         document.getElementById('outAttr' + id).innerText = select.options[select.selectedIndex].text;
+    }
+
+    function getType(p){
+        if(p > 95) return "완전 동기화 (Perfect Sync)";
+        if(p > 80) return "공명 상태 (Resonance)";
+        if(p > 60) return "안정 연계 (Stable Link)";
+        if(p > 40) return "불안정 결합 (Unstable)";
+        return "붕괴 위험 (Critical)";
     }
 
     function calcSync(){
         const p = Math.floor(Math.random()*101);
-        percent.innerText = p + "%";
+        const percentEl = document.getElementById('percent');
+        
+        percentEl.innerText = p + "%";
+        percentEl.style.color = "white";
+        percentEl.style.textShadow = "0 0 40px #fff";
+        percentEl.classList.remove('glitch');
+
+        document.getElementById('sync-status').innerText = getType(p);
+
+        if(p < 30){
+            percentEl.style.color = "red";
+            percentEl.style.textShadow = "0 0 20px red";
+            percentEl.classList.add('glitch');
+            for(let i=0; i<5; i++){ setTimeout(()=> spawnError(), i*200); }
+        }
+
         let r = p > 98 ? "SSS" : p > 90 ? "S" : p > 75 ? "A" : p > 50 ? "B" : "C";
-        rank.innerText = "RANK " + r;
+        document.getElementById('rank').innerText = "RANK " + r;
     }
 
     function spawnError() {
@@ -214,46 +231,71 @@
         popup.style.left = Math.random() * 900 + "px";
         popup.innerHTML = `
             <div class="err-head"><span>SYSTEM_ALERT</span><span onclick="this.parentElement.parentElement.remove()" style="cursor:pointer">×</span></div>
-            <div style="padding:15px;"><strong>FATAL_ERROR</strong><br>SYSTEM_OVERLOAD_DETECTED</div>
+            <div style="padding:15px;"><strong>FATAL_ERROR</strong><br>SYNC_VITAL_LOW</div>
         `;
         container.appendChild(popup);
-        percent.classList.add('glitch');
     }
 
     function clearErrors() { 
         document.getElementById('error-container').innerHTML = ''; 
-        percent.classList.remove('glitch');
+        document.getElementById('percent').classList.remove('glitch');
     }
 
-    // ⭐ 정밀 비율 고정 저장 함수
-    function saveImage(){
-        const inputArea = document.getElementById('input-area');
-        inputArea.style.display = 'none';
+    // ⭐ 반짝 효과(flash) 제거 및 정밀 캡처 로직 적용
+    async function saveImage(){
+        const original = document.getElementById("capture");
+        const inputArea = document.getElementById("input-area");
 
-        const target = document.getElementById("capture");
+        // UI 숨김
+        inputArea.style.display = "none";
 
-        html2canvas(target, {
+        // ⭐ 캡처용 래퍼 생성
+        const wrapper = document.createElement("div");
+        wrapper.style.position = "fixed";
+        wrapper.style.left = "0";
+        wrapper.style.top = "0";
+        wrapper.style.width = "1200px";
+        wrapper.style.height = "800px";
+        wrapper.style.background = "#000";
+        wrapper.style.zIndex = "-1";
+        wrapper.style.overflow = "hidden";
+
+        // ⭐ clone
+        const clone = original.cloneNode(true);
+        clone.style.transform = "none";
+        clone.style.width = "1200px";
+        clone.style.height = "800px";
+        clone.style.margin = "0";
+        clone.style.position = "absolute";
+        clone.style.left = "0";
+        clone.style.top = "0";
+
+        wrapper.appendChild(clone);
+        document.body.appendChild(wrapper);
+
+        // 강제 리플로우
+        await new Promise(r => setTimeout(r, 50));
+
+        const canvas = await html2canvas(clone, {
             backgroundColor: "#000",
             scale: 2,
             useCORS: true,
-            // ⭐ 요청하신 핵심 추가 옵션
-            width: target.offsetWidth,
-            height: target.offsetHeight,
-            scrollX: 0,
-            scrollY: 0,
-            windowWidth: target.offsetWidth,
-            windowHeight: target.offsetHeight
-        }).then(canvas => {
-            const link = document.createElement("a");
-            link.download = "ARCH_FINAL_REPORT.png";
-            link.href = canvas.toDataURL();
-            link.click();
-            inputArea.style.display = 'flex';
-
-            // 저장 직후 연출
-            let count = 0;
-            const interval = setInterval(() => { spawnError(); count++; if(count >= 12) clearInterval(interval); }, 80);
+            logging: false,
+            width: 1200,
+            height: 800,
+            windowWidth: 1200,
+            windowHeight: 800
         });
+
+        // 복사본 제거 및 UI 복구
+        document.body.removeChild(wrapper);
+        inputArea.style.display = "flex";
+
+        // 다운로드
+        const link = document.createElement("a");
+        link.download = "ARCH_SYNC_FIXED.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
     }
 </script>
 </body>
