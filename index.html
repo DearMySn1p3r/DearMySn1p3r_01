@@ -1,202 +1,260 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ARCH_SYNC_INTERFACE_FINAL</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARCH_SYNC_FINAL_v5.3</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Noto+Sans+KR:wght@300;700&display=swap');
 
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Noto+Sans+KR:wght@300;700&display=swap');
+        :root {
+            --neon-cyan: #00f2ff;
+            --arch-gold: #d4af37;
+            --theme-color1: #ffffff;
+            --theme-color2: #ffffff;
+        }
 
-body{
-    margin:0;
-    background:#000;
-    color:#fff;
-    font-family:'Orbitron','Noto Sans KR';
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-}
+        body {
+            margin: 0; background: #050505; color: #fff;
+            font-family: 'Orbitron', 'Noto Sans KR', sans-serif;
+            display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+            padding: 20px; overflow-x: hidden;
+        }
 
-/* 버튼 */
-#top-controls{
-    margin:20px;
-}
-button{
-    background:black;
-    border:1px solid white;
-    color:white;
-    padding:10px 25px;
-    cursor:pointer;
-}
+        #top-controls { margin-bottom: 20px; display: flex; gap: 15px; z-index: 5000; }
+        button {
+            background: transparent; border: 1px solid var(--neon-cyan); color: var(--neon-cyan);
+            padding: 10px 30px; cursor: pointer; font-family: 'Orbitron'; font-weight: bold;
+            transition: 0.3s; text-transform: uppercase;
+        }
+        button:hover { background: var(--neon-cyan); color: #000; box-shadow: 0 0 20px var(--neon-cyan); }
 
-/* 캡처 영역 */
-#capture{
-    width:1200px;
-    height:800px;
-    background:#000;
-    padding:40px;
-    box-sizing:border-box;
-    position:relative;
-    overflow:hidden;
-}
+        /* 🚨 캡처 영역 (1200x800 고정) */
+        #capture {
+            width: 1200px; height: 800px; background: #000;
+            position: relative; padding: 40px; box-sizing: border-box;
+            border: 2px solid #333; display: flex; flex-direction: column;
+            background-image: 
+                linear-gradient(rgba(0, 242, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 242, 255, 0.05) 1px, transparent 1px),
+                radial-gradient(circle at center, #111 0%, #000 100%);
+            background-size: 40px 40px, 40px 40px, 100% 100%;
+            overflow: hidden;
+        }
 
-/* 입력 */
-.input-ui{
-    position:absolute;
-    bottom:10px;
-    left:50%;
-    transform:translateX(-50%);
-    display:flex;
-    gap:20px;
-}
+        /* ⭐ 스캔라인 효과 */
+        .scanline {
+            position: absolute; width: 100%; height: 2px;
+            background: rgba(255,255,255,0.6); box-shadow: 0 0 20px white;
+            top: 0; animation: scan 2s linear infinite; pointer-events: none; z-index: 10;
+        }
+        @keyframes scan {
+            0% { top: 0; opacity: 0; }
+            10% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { top: 100%; opacity: 0; }
+        }
 
-input, select{
-    padding:6px;
-}
+        /* ⭐ 글리치 효과 */
+        .glitch { position: relative; animation: glitch 0.3s infinite; color: #ff0044 !important; text-shadow: 2px 2px #00f2ff !important; }
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            25% { transform: translate(-2px,2px); }
+            50% { transform: translate(2px,-2px); }
+            75% { transform: translate(-1px,1px); }
+            100% { transform: translate(0); }
+        }
 
-/* 카드 */
-.main{
-    display:flex;
-    justify-content:space-between;
-    margin-top:80px;
-}
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #fff; padding-bottom: 15px; margin-bottom: 30px; }
+        .header h1 { margin: 0; letter-spacing: 8px; font-size: 26px; text-shadow: 0 0 10px #fff; }
 
-.card{
-    width:300px;
-}
+        .main-grid { display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 30px; flex: 1; align-items: center; z-index: 5; }
 
-.photo{
-    width:100%;
-    height:300px;
-    background:#111;
-}
+        .subject-info { 
+            display: flex; flex-direction: column; gap: 15px; padding: 25px; 
+            background: rgba(255,255,255,0.03); border: 2px solid var(--theme-color); 
+            transition: 0.5s; box-shadow: inset 0 0 20px rgba(255,255,255,0.05);
+        }
+        #info1 { --theme-color: var(--theme-color1); }
+        #info2 { --theme-color: var(--theme-color2); }
 
-.photo img{
-    width:100%;
-    height:100%;
-    object-fit:cover;
-}
+        .photo-frame { 
+            width: 100%; aspect-ratio: 1/1; border: 1px solid rgba(255,255,255,0.2); 
+            overflow: hidden; background: url('「ARCH」 Symbol Logo White Ver.png') no-repeat center center / 50% #050505; 
+        }
+        .photo-frame img { width: 100%; height: 100%; object-fit: cover; }
 
-/* 중앙 */
-.center{
-    text-align:center;
-}
+        .text-display { font-size: 24px; font-weight: 900; letter-spacing: 2px; border-bottom: 1px solid #444; padding-bottom: 5px; min-height: 35px; color: #fff; }
+        .attr-display { font-size: 15px; color: var(--arch-gold); font-family: 'Noto Sans KR'; margin-top: 5px; }
 
-.percent{
-    font-size:80px;
-}
+        .center-core { position: relative; text-align: center; }
+        .arch-logo { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 480px; opacity: 0.15; pointer-events: none; }
+        .sync-val { font-size: 130px; font-weight: 900; line-height: 1; text-shadow: 0 0 40px #fff; margin: 20px 0; font-style: italic; position: relative; z-index: 1; }
+        .rank-badge { font-size: 26px; border: 2px solid #fff; padding: 8px 40px; box-shadow: 0 0 20px #fff; background: rgba(0,0,0,0.5); z-index: 1; position: relative; }
 
-.rank{
-    border:1px solid white;
-    padding:5px 20px;
-}
-</style>
+        /* 하단 입력 UI */
+        .input-ui { display: flex; justify-content: center; gap: 25px; margin-top: 30px; width: 1200px; padding: 20px; background: rgba(255,255,255,0.05); border: 1px solid #333; }
+        .ui-group { display: flex; gap: 12px; align-items: center; }
+        input[type=text], select { padding: 10px; background: #fff; border: none; font-weight: bold; font-family: 'Noto Sans KR'; }
+
+        /* 에러 팝업 */
+        .error-popup {
+            position: absolute; width: 260px; background: #c0c0c0; border: 2px solid; border-color: #eee #888 #888 #eee; color: #000;
+            padding: 2px; font-family: 'Tahoma', sans-serif; font-size: 11px; z-index: 1000; box-shadow: 10px 10px 20px rgba(0,0,0,0.5);
+        }
+        .err-head { background: #000080; color: #fff; padding: 4px 6px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+    </style>
 </head>
-
 <body>
 
 <div id="top-controls">
-<button onclick="calc()">ANALYZE</button>
-<button onclick="saveImage()">SAVE</button>
+    <button onclick="calcSync()">ANALYZE SYNC</button>
+    <button onclick="saveImage()">SAVE DATA</button>
+    <button onclick="clearErrors()" style="border-color: #f00; color: #f00;">CLEAR ALERTS</button>
 </div>
 
 <div id="capture">
+    <div class="scanline"></div>
+    <div id="error-container"></div>
 
-<div class="main">
+    <div class="header">
+        <div style="font-size: 11px;">AUTH: OVERRIDE_v5.3</div>
+        <h1>SYNC_MONITOR // FINAL</h1>
+        <div style="font-size: 11px; color: var(--arch-gold);">STABLE_CONNECTION</div>
+    </div>
 
-<div class="card">
-<div class="photo"><img id="img1"></div>
-<div id="outName1">SUBJECT_A</div>
-</div>
+    <div class="main-grid">
+        <div class="subject-info" id="info1">
+            <div class="photo-frame"><img id="img1"></div>
+            <div class="text-display" id="outName1">SUBJECT_A</div>
+            <div class="attr-display" id="outAttr1">무속성 (None)</div>
+        </div>
 
-<div class="center">
-<div class="percent" id="percent">--%</div>
-<div class="rank" id="rank">RANK --</div>
-</div>
+        <div class="center-core">
+            <img src="「ARCH」 Symbol Logo White Ver.png" class="arch-logo">
+            <div style="font-size: 14px; color: var(--neon-cyan); letter-spacing: 5px;">SYNCHRONIZATION</div>
+            <div class="sync-val" id="percent">--%</div>
+            <div class="rank-badge" id="rank">RANK --</div>
+        </div>
 
-<div class="card">
-<div class="photo"><img id="img2"></div>
-<div id="outName2">SUBJECT_B</div>
-</div>
-
+        <div class="subject-info" id="info2">
+            <div class="photo-frame"><img id="img2"></div>
+            <div class="text-display" id="outName2">SUBJECT_B</div>
+            <div class="attr-display" id="outAttr2">무속성 (None)</div>
+        </div>
+    </div>
 </div>
 
 <div class="input-ui" id="input-area">
-<input type="file" id="file1">
-<input type="text" id="nameInput1" placeholder="이름">
-
-<input type="file" id="file2">
-<input type="text" id="nameInput2" placeholder="이름">
-</div>
-
+    <div class="ui-group">
+        <input type="file" id="file1" style="width: 160px;">
+        <input type="text" id="nameInput1" placeholder="NAME A" oninput="syncName(1)">
+        <select id="attrInput1" onchange="updateTheme(1)">
+            <option value="none">무속성 (None)</option>
+            <option value="pyre">🔥 불 (Pyre)</option>
+            <option value="aqua">💧 물 (Aqua)</option>
+            <option value="verde">🌿 풀 (Verde)</option>
+            <option value="fulmen">⚡ 번개 (Fulmen)</option>
+            <option value="aero">💨 바람 (Aero)</option>
+            <option value="glacies">❄️ 얼음 (Glacies)</option>
+        </select>
+    </div>
+    <div class="ui-group" style="border-left: 1px solid #444; padding-left: 20px;">
+        <input type="file" id="file2" style="width: 160px;">
+        <input type="text" id="nameInput2" placeholder="NAME B" oninput="syncName(2)">
+        <select id="attrInput2" onchange="updateTheme(2)">
+            <option value="none">무속성 (None)</option>
+            <option value="pyre">🔥 불 (Pyre)</option>
+            <option value="aqua">💧 물 (Aqua)</option>
+            <option value="verde">🌿 풀 (Verde)</option>
+            <option value="fulmen">⚡ 번개 (Fulmen)</option>
+            <option value="aero">💨 바람 (Aero)</option>
+            <option value="glacies">❄️ 얼음 (Glacies)</option>
+        </select>
+    </div>
 </div>
 
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-
 <script>
+    // 이미지 업로드 및 엑박 방지
+    file1.onchange = e => { img1.src = URL.createObjectURL(e.target.files[0]); img1.parentElement.style.background = 'none'; }
+    file2.onchange = e => { img2.src = URL.createObjectURL(e.target.files[0]); img2.parentElement.style.background = 'none'; }
 
-// 이미지
-file1.onchange = e => img1.src = URL.createObjectURL(e.target.files[0]);
-file2.onchange = e => img2.src = URL.createObjectURL(e.target.files[0]);
+    // 실시간 이름 동기화
+    function syncName(id) {
+        const val = document.getElementById('nameInput' + id).value;
+        document.getElementById('outName' + id).innerText = val || 'SUBJECT_' + (id===1?'A':'B');
+    }
 
-// 🔥 이름 실시간 반영
-nameInput1.addEventListener("input", () => {
-    outName1.innerText = nameInput1.value || "SUBJECT_A";
-});
-nameInput2.addEventListener("input", () => {
-    outName2.innerText = nameInput2.value || "SUBJECT_B";
-});
+    // 속성 및 테마 실시간 반영 (무속성 포함)
+    function updateTheme(id) {
+        const select = document.getElementById('attrInput' + id);
+        const val = select.value;
+        const attrColors = { 
+            pyre: '#ff4d00', aqua: '#0088ff', verde: '#00ff66', 
+            fulmen: '#f2ff00', aero: '#00ffcc', glacies: '#a0e9ff', 
+            none: '#ffffff' // 무속성은 화이트
+        };
+        document.documentElement.style.setProperty('--theme-color' + id, attrColors[val]);
+        document.getElementById('outAttr' + id).innerText = select.options[select.selectedIndex].text;
+    }
 
-// 계산
-function calc(){
-    const p = Math.floor(Math.random()*101);
-    percent.innerText = p + "%";
+    function calcSync(){
+        const p = Math.floor(Math.random()*101);
+        percent.innerText = p + "%";
+        let r = p > 98 ? "SSS" : p > 90 ? "S" : p > 75 ? "A" : p > 50 ? "B" : "C";
+        rank.innerText = "RANK " + r;
+    }
 
-    let r="C";
-    if(p>85) r="S";
-    else if(p>60) r="A";
-    else if(p>40) r="B";
+    function spawnError() {
+        const container = document.getElementById('error-container');
+        const popup = document.createElement('div');
+        popup.className = 'error-popup';
+        popup.style.top = Math.random() * 600 + "px";
+        popup.style.left = Math.random() * 900 + "px";
+        popup.innerHTML = `
+            <div class="err-head"><span>SYSTEM_ALERT</span><span onclick="this.parentElement.parentElement.remove()" style="cursor:pointer">×</span></div>
+            <div style="padding:15px;"><strong>FATAL_ERROR</strong><br>SYSTEM_OVERLOAD_DETECTED</div>
+        `;
+        container.appendChild(popup);
+        percent.classList.add('glitch');
+    }
 
-    rank.innerText = "RANK " + r;
-}
+    function clearErrors() { 
+        document.getElementById('error-container').innerHTML = ''; 
+        percent.classList.remove('glitch');
+    }
 
-// 💣 완전 안정 저장 함수
-async function saveImage(){
+    // ⭐ 정밀 비율 고정 저장 함수
+    function saveImage(){
+        const inputArea = document.getElementById('input-area');
+        inputArea.style.display = 'none';
 
-    const original = document.getElementById("capture");
-    const inputArea = document.getElementById("input-area");
+        const target = document.getElementById("capture");
 
-    inputArea.style.display = "none";
+        html2canvas(target, {
+            backgroundColor: "#000",
+            scale: 2,
+            useCORS: true,
+            // ⭐ 요청하신 핵심 추가 옵션
+            width: target.offsetWidth,
+            height: target.offsetHeight,
+            scrollX: 0,
+            scrollY: 0,
+            windowWidth: target.offsetWidth,
+            windowHeight: target.offsetHeight
+        }).then(canvas => {
+            const link = document.createElement("a");
+            link.download = "ARCH_FINAL_REPORT.png";
+            link.href = canvas.toDataURL();
+            link.click();
+            inputArea.style.display = 'flex';
 
-    // ⭐ clone 생성 (핵심)
-    const clone = original.cloneNode(true);
-
-    clone.style.position = "fixed";
-    clone.style.left = "-9999px";
-    clone.style.top = "0";
-    clone.style.transform = "none";
-    clone.style.width = "1200px";
-    clone.style.height = "800px";
-
-    document.body.appendChild(clone);
-
-    const canvas = await html2canvas(clone,{
-        backgroundColor:"#000",
-        scale:2,
-        useCORS:true
-    });
-
-    document.body.removeChild(clone);
-    inputArea.style.display = "flex";
-
-    const link = document.createElement("a");
-    link.download = "ARCH_RESULT.png";
-    link.href = canvas.toDataURL();
-    link.click();
-}
-
+            // 저장 직후 연출
+            let count = 0;
+            const interval = setInterval(() => { spawnError(); count++; if(count >= 12) clearInterval(interval); }, 80);
+        });
+    }
 </script>
-
 </body>
 </html>
