@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARCH_SYNC_FIXED_v5.6</title>
+    <title>ARCH_SYNC_v5.7</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Noto+Sans+KR:wght@300;700&display=swap');
 
@@ -21,7 +21,7 @@
             padding: 20px; overflow-x: hidden; cursor: none;
         }
 
-        /* ⭐ 커서 라이트 효과 (유지) */
+        /* ⭐ 커서 라이트 (유지) */
         .cursor-light {
             position: fixed; width: 250px; height: 250px;
             background: radial-gradient(circle, rgba(255,255,255,0.15), transparent 70%);
@@ -36,7 +36,6 @@
         }
         button:hover { background: var(--neon-cyan); color: #000; box-shadow: 0 0 20px var(--neon-cyan); }
 
-        /* 캡처 영역 (1200x800 고정) */
         #capture {
             width: 1200px; height: 800px; background: #000;
             position: relative; padding: 40px; box-sizing: border-box;
@@ -113,7 +112,7 @@
     <div id="error-container"></div>
 
     <div class="header">
-        <div style="font-size: 11px;">AUTH: OVERRIDE_v5.6</div>
+        <div style="font-size: 11px;">AUTH: OVERRIDE_v5.7</div>
         <h1>ARCH_SYNC_INTERFACE</h1>
         <div style="font-size: 11px; color: var(--arch-gold);">SYSTEM_INTEGRITY: ACTIVE</div>
     </div>
@@ -171,7 +170,6 @@
 
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 <script>
-    // 마우스 커서 라이트 로직
     document.addEventListener('mousemove', (e) => {
         const cursor = document.getElementById('cursor');
         cursor.style.left = e.clientX + 'px';
@@ -204,12 +202,10 @@
     function calcSync(){
         const p = Math.floor(Math.random()*101);
         const percentEl = document.getElementById('percent');
-        
         percentEl.innerText = p + "%";
         percentEl.style.color = "white";
         percentEl.style.textShadow = "0 0 40px #fff";
         percentEl.classList.remove('glitch');
-
         document.getElementById('sync-status').innerText = getType(p);
 
         if(p < 30){
@@ -218,7 +214,6 @@
             percentEl.classList.add('glitch');
             for(let i=0; i<5; i++){ setTimeout(()=> spawnError(), i*200); }
         }
-
         let r = p > 98 ? "SSS" : p > 90 ? "S" : p > 75 ? "A" : p > 50 ? "B" : "C";
         document.getElementById('rank').innerText = "RANK " + r;
     }
@@ -241,61 +236,46 @@
         document.getElementById('percent').classList.remove('glitch');
     }
 
-    // ⭐ 반짝 효과(flash) 제거 및 정밀 캡처 로직 적용
+    // ⭐ 요청하신 강제 비율 보정 캡처 로직 (오버레이 및 팝업 연출 제거됨)
     async function saveImage(){
-        const original = document.getElementById("capture");
-        const inputArea = document.getElementById("input-area");
-
-        // UI 숨김
+        const inputArea = document.getElementById('input-area');
         inputArea.style.display = "none";
 
-        // ⭐ 캡처용 래퍼 생성
-        const wrapper = document.createElement("div");
-        wrapper.style.position = "fixed";
-        wrapper.style.left = "0";
-        wrapper.style.top = "0";
-        wrapper.style.width = "1200px";
-        wrapper.style.height = "800px";
-        wrapper.style.background = "#000";
-        wrapper.style.zIndex = "-1";
-        wrapper.style.overflow = "hidden";
+        const target = document.getElementById("capture");
 
-        // ⭐ clone
-        const clone = original.cloneNode(true);
-        clone.style.transform = "none";
-        clone.style.width = "1200px";
-        clone.style.height = "800px";
-        clone.style.margin = "0";
-        clone.style.position = "absolute";
-        clone.style.left = "0";
-        clone.style.top = "0";
-
-        wrapper.appendChild(clone);
-        document.body.appendChild(wrapper);
-
-        // 강제 리플로우
-        await new Promise(r => setTimeout(r, 50));
-
-        const canvas = await html2canvas(clone, {
+        // 1. html2canvas로 원본 캡처
+        const rawCanvas = await html2canvas(target, {
             backgroundColor: "#000",
             scale: 2,
             useCORS: true,
-            logging: false,
-            width: 1200,
-            height: 800,
-            windowWidth: 1200,
-            windowHeight: 800
+            logging: false
         });
 
-        // 복사본 제거 및 UI 복구
-        document.body.removeChild(wrapper);
-        inputArea.style.display = "flex";
+        // 2. 강제 비율 보정 캔버스 생성 (1200x800의 2배수)
+        const finalCanvas = document.createElement("canvas");
+        finalCanvas.width = 1200 * 2;
+        finalCanvas.height = 800 * 2;
 
-        // 다운로드
+        const ctx = finalCanvas.getContext("2d");
+
+        // 3. 비율에 맞춰서 그리기
+        ctx.drawImage(
+            rawCanvas,
+            0, 0,
+            rawCanvas.width,
+            rawCanvas.height,
+            0, 0,
+            finalCanvas.width,
+            finalCanvas.height
+        );
+
+        // 4. 다운로드
         const link = document.createElement("a");
-        link.download = "ARCH_SYNC_FIXED.png";
-        link.href = canvas.toDataURL("image/png");
+        link.download = "ARCH_SYNC_FINAL.png";
+        link.href = finalCanvas.toDataURL("image/png");
         link.click();
+
+        inputArea.style.display = "flex";
     }
 </script>
 </body>
