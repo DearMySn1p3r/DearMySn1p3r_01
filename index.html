@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARCH_SYNC_v5.8</title>
+    <title>ARCH_SYNC_v6.0</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Noto+Sans+KR:wght@300;700&display=swap');
 
@@ -21,7 +21,6 @@
             padding: 20px; overflow-x: hidden; cursor: none;
         }
 
-        /* ⭐ 커서 라이트 (유지) */
         .cursor-light {
             position: fixed; width: 250px; height: 250px;
             background: radial-gradient(circle, rgba(255,255,255,0.15), transparent 70%);
@@ -36,7 +35,12 @@
         }
         button:hover { background: var(--neon-cyan); color: #000; box-shadow: 0 0 20px var(--neon-cyan); }
 
-        /* 캡처 영역 */
+        .result-animate {
+            opacity: 0; transform: translateY(30px) scale(0.95); filter: blur(10px);
+            transition: 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .result-animate.show { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+
         #capture {
             width: 1200px; height: 800px; background: #000;
             position: relative; padding: 40px; box-sizing: border-box;
@@ -48,6 +52,18 @@
             background-size: 40px 40px, 40px 40px, 100% 100%;
             overflow: hidden;
         }
+
+        /* ⭐ 수정된 Photo Frame (Background 방식) */
+        .photo-frame { 
+            width: 100%; aspect-ratio: 1/1; 
+            border: 1px solid rgba(255,255,255,0.2); 
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-image: url('「ARCH」 Symbol Logo White Ver.png'); /* 기본 로고 */
+            background-color: #050505;
+        }
+        .photo-frame img { display: none; } /* img 태그 숨김 */
 
         .scanline {
             position: absolute; width: 100%; height: 2px;
@@ -71,12 +87,6 @@
         }
         #info1 { --theme-color: var(--theme-color1); }
         #info2 { --theme-color: var(--theme-color2); }
-
-        .photo-frame { 
-            width: 100%; aspect-ratio: 1/1; border: 1px solid rgba(255,255,255,0.2); 
-            overflow: hidden; background: url('「ARCH」 Symbol Logo White Ver.png') no-repeat center center / 40% #050505; 
-        }
-        .photo-frame img { width: 100%; height: 100%; object-fit: cover; }
 
         .text-display { font-size: 24px; font-weight: 900; letter-spacing: 2px; border-bottom: 1px solid #444; padding-bottom: 5px; color: #fff; }
         .attr-display { font-size: 15px; color: var(--arch-gold); font-family: 'Noto Sans KR'; margin-top: 5px; }
@@ -105,6 +115,7 @@
 <div id="top-controls">
     <button onclick="calcSync()">ANALYZE SYNC</button>
     <button onclick="saveImage()">SAVE DATA</button>
+    <button onclick="shareResult()">SHARE</button>
     <button onclick="clearErrors()" style="border-color: #f00; color: #f00;">CLEAR ALERTS</button>
 </div>
 
@@ -113,19 +124,19 @@
     <div id="error-container"></div>
 
     <div class="header">
-        <div style="font-size: 11px;">AUTH: OVERRIDE_v5.8</div>
+        <div style="font-size: 11px;">AUTH: OVERRIDE_v6.0</div>
         <h1>ARCH_SYNC_INTERFACE</h1>
         <div style="font-size: 11px; color: var(--arch-gold);">SYSTEM_INTEGRITY: ACTIVE</div>
     </div>
 
     <div class="main-grid">
         <div class="subject-info" id="info1">
-            <div class="photo-frame"><img id="img1"></div>
+            <div class="photo-frame" id="frame1"></div>
             <div class="text-display" id="outName1">SUBJECT_A</div>
             <div class="attr-display" id="outAttr1">무속성 (None)</div>
         </div>
 
-        <div class="center-core">
+        <div class="center-core result-animate" id="core-anim">
             <img src="「ARCH」 Symbol Logo White Ver.png" class="arch-logo">
             <div id="sync-status">INITIALIZING...</div>
             <div class="sync-val" id="percent">--%</div>
@@ -133,7 +144,7 @@
         </div>
 
         <div class="subject-info" id="info2">
-            <div class="photo-frame"><img id="img2"></div>
+            <div class="photo-frame" id="frame2"></div>
             <div class="text-display" id="outName2">SUBJECT_B</div>
             <div class="attr-display" id="outAttr2">무속성 (None)</div>
         </div>
@@ -177,8 +188,19 @@
         cursor.style.top = e.clientY + 'px';
     });
 
-    file1.onchange = e => { if(e.target.files[0]) { img1.src = URL.createObjectURL(e.target.files[0]); img1.parentElement.style.background = 'none'; } }
-    file2.onchange = e => { if(e.target.files[0]) { img2.src = URL.createObjectURL(e.target.files[0]); img2.parentElement.style.background = 'none'; } }
+    // ⭐ 파일 선택 시 배경 이미지로 적용하도록 변경
+    file1.onchange = e => { 
+        if(e.target.files[0]) { 
+            const url = URL.createObjectURL(e.target.files[0]);
+            document.getElementById('frame1').style.backgroundImage = `url(${url})`;
+        } 
+    }
+    file2.onchange = e => { 
+        if(e.target.files[0]) { 
+            const url = URL.createObjectURL(e.target.files[0]);
+            document.getElementById('frame2').style.backgroundImage = `url(${url})`;
+        } 
+    }
 
     function syncName(id) {
         const val = document.getElementById('nameInput' + id).value;
@@ -192,6 +214,24 @@
         document.getElementById('outAttr' + id).innerText = select.options[select.selectedIndex].text;
     }
 
+    const attrGlow = {
+        pyre: "0 0 25px #ff4d00", aqua: "0 0 25px #00aaff", verde: "0 0 25px #00ff66",
+        fulmen: "0 0 25px #ffff00", aero: "0 0 25px #00ffcc", glacies: "0 0 25px #a0e9ff"
+    };
+
+    function applyGlow(){
+        const a1 = attrInput1.value;
+        const a2 = attrInput2.value;
+        percent.style.textShadow = attrGlow[a1] || "0 0 40px white";
+        rank.style.boxShadow = attrGlow[a2] || "0 0 20px white";
+    }
+
+    function randomUI(){
+        document.querySelectorAll(".subject-info").forEach(el=>{
+            el.style.borderWidth = Math.random() > 0.5 ? "2px" : "1px";
+        });
+    }
+
     function getType(p){
         if(p > 95) return "완전 동기화 (Perfect Sync)";
         if(p > 80) return "공명 상태 (Resonance)";
@@ -201,22 +241,36 @@
     }
 
     function calcSync(){
+        const core = document.getElementById('core-anim');
+        core.classList.remove('show');
         const p = Math.floor(Math.random()*101);
-        const percentEl = document.getElementById('percent');
-        percentEl.innerText = p + "%";
-        percentEl.style.color = "white";
-        percentEl.style.textShadow = "0 0 40px #fff";
-        percentEl.classList.remove('glitch');
-        document.getElementById('sync-status').innerText = getType(p);
+        
+        setTimeout(() => {
+            percent.innerText = p + "%";
+            percent.style.color = "white";
+            percent.classList.remove('glitch');
+            document.getElementById('sync-status').innerText = getType(p);
+            if(p < 30){
+                percent.style.color = "red";
+                percent.classList.add('glitch');
+                for(let i=0; i<5; i++){ setTimeout(()=> spawnError(), i*200); }
+            }
+            let r = p > 98 ? "SSS" : p > 90 ? "S" : p > 75 ? "A" : p > 50 ? "B" : "C";
+            rank.innerText = "RANK " + r;
+            applyGlow();
+            randomUI();
+            core.classList.add('show');
+        }, 100);
+    }
 
-        if(p < 30){
-            percentEl.style.color = "red";
-            percentEl.style.textShadow = "0 0 20px red";
-            percentEl.classList.add('glitch');
-            for(let i=0; i<5; i++){ setTimeout(()=> spawnError(), i*200); }
+    async function shareResult() {
+        if (navigator.share) {
+            try { await navigator.share({ title: 'ARCH SYNC REPORT', text: `싱크율 ${percent.innerText} 달성!`, url: window.location.href }); } 
+            catch (err) { console.log('Share failed'); }
+        } else {
+            alert('링크가 복사되었습니다.');
+            navigator.clipboard.writeText(window.location.href);
         }
-        let r = p > 98 ? "SSS" : p > 90 ? "S" : p > 75 ? "A" : p > 50 ? "B" : "C";
-        document.getElementById('rank').innerText = "RANK " + r;
     }
 
     function spawnError() {
@@ -234,50 +288,31 @@
 
     function clearErrors() { 
         document.getElementById('error-container').innerHTML = ''; 
-        document.getElementById('percent').classList.remove('glitch');
+        percent.classList.remove('glitch');
     }
 
-    // ⭐ [v5.8 핵심] 고정 정밀도 캡처 함수
+    // ⭐ 캡처 옵션 반영: useCORS, allowTaint 추가
     async function saveImage(){
         const inputArea = document.getElementById('input-area');
         inputArea.style.display = "none";
-
         const target = document.getElementById("capture");
 
-        // 1. html2canvas 호출 시 크기를 1200x800으로 강제 리셋
         const rawCanvas = await html2canvas(target, {
             backgroundColor: "#000",
-            scale: 2,           // 고화질
-            useCORS: true,
+            scale: 2,
+            useCORS: true,      // ⭐ CORS 허용
+            allowTaint: true,   // ⭐ Taint 허용
             logging: false,
-            width: 1200,        // 타겟 가로 고정
-            height: 800,        // 타겟 세로 고정
-            windowWidth: 1200,  // 가상 윈도우 크기 고정 (배율 무시용)
-            windowHeight: 800,
-            x: 0,
-            y: 0
+            width: 1200, height: 800, windowWidth: 1200, windowHeight: 800, x: 0, y: 0
         });
 
-        // 2. 비율 보정용 최종 캔버스 생성
         const finalCanvas = document.createElement("canvas");
-        finalCanvas.width = 1200 * 2;
-        finalCanvas.height = 800 * 2;
+        finalCanvas.width = 1200 * 2; finalCanvas.height = 800 * 2;
         const ctx = finalCanvas.getContext("2d");
+        ctx.drawImage(rawCanvas, 0, 0, rawCanvas.width, rawCanvas.height, 0, 0, finalCanvas.width, finalCanvas.height);
 
-        // 3. 비율에 맞춰서 다시 그리기 (눌림 현상 최종 방지)
-        ctx.drawImage(
-            rawCanvas,
-            0, 0,
-            rawCanvas.width,
-            rawCanvas.height,
-            0, 0,
-            finalCanvas.width,
-            finalCanvas.height
-        );
-
-        // 4. 다운로드
         const link = document.createElement("a");
-        link.download = "ARCH_SYNC_FINAL_FIXED.png";
+        link.download = "ARCH_SYNC_FINAL.png";
         link.href = finalCanvas.toDataURL("image/png");
         link.click();
 
