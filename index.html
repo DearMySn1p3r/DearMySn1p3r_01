@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARCH_SYNC_INTERFACE_v4.0_ULTIMATE</title>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Noto+Sans+KR:wght@300;700&display=swap');
+
+    :root {
+        --neon-cyan: #00f2ff;
+        --arch-gold: #d4af37;
+        --bg-dark: #000000;
+        --base-glow: 0 0 20px rgba(255, 255, 255, 0.3);
+        /* 속성별 가변 색상 (JS로 제어 예정) */
+        --theme-color1: #ffffff;
+        --theme-color2: #ffffff;
+    }
+
+    body {
+        margin: 0; background: #080808; color: #fff;
+        font-family: 'Orbitron', 'Noto Sans KR', sans-serif;
+        display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+        padding-top: 20px; overflow-x: hidden;
+    }
+
+    /* 상단 제어 버튼: 저장 시 제외됨 */
+    #top-controls {
+        margin-bottom: 25px; display: flex; gap: 15px; z-index: 1000;
+    }
+
+    button {
+        background: #000; border: 2px solid #fff; color: #fff;
+        padding: 12px 35px; cursor: pointer; font-family: 'Orbitron'; font-weight: bold;
+        transition: 0.3s; box-shadow: var(--base-glow); text-transform: uppercase;
+        position: relative; overflow: hidden;
+    }
+
+    button:hover { background: #fff; color: #000; box-shadow: 0 0 30px #fff; }
+
+    /* 🚨 캡처 영역: A4 비율 고정 (넓적해짐 방지) 🚨 */
+    #capture {
+        width: 1000px; /* 고정 가로폭 */
+        height: 1414px; /* A4 비율 (1:√2) 가로 세로폭 */
+        background: #000;
+        position: relative; padding: 60px; box-sizing: border-box;
+        border: 4px solid #222;
+        display: flex; flex-direction: column;
+        /* 홀로그램 그리드 배경 */
+        background-image: 
+            linear-gradient(rgba(0, 242, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 242, 255, 0.03) 1px, transparent 1px),
+            radial-gradient(circle at center, #111 0%, #000 100%);
+        background-size: 50px 50px, 50px 50px, 100% 100%;
+        box-shadow: 0 0 100px rgba(0, 242, 255, 0.1);
+    }
+
+    /* 입력 UI: 저장 시 숨김 처리됨 */
+    .input-ui {
+        position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+        width: 90%; display: flex; justify-content: space-between; gap: 20px;
+        z-index: 10;
+    }
+    .ui-panel { flex: 1; display: flex; gap: 10px; background: rgba(0,0,0,0.85); padding: 15px; border: 1px solid #333; }
+    .file-input-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100px; }
+    .file-input-wrapper input[type=file] { position: absolute; left: 0; top: 0; opacity: 0; font-size: 100px; cursor: pointer; }
+    .file-btn-desc { background: #222; border: 1px solid #444; color: #aaa; padding: 10px; text-align: center; font-size: 11px; }
+    input[type=text], select { flex: 1; padding: 12px; background: #fff; color: #000; border: none; font-weight: bold; font-size: 14px; font-family: 'Noto Sans KR'; }
+
+    /* 결과 출력 영역 */
+    .header {
+        display: flex; justify-content: space-between; align-items: flex-end;
+        border-bottom: 3px solid #fff; padding-bottom: 20px; margin-bottom: 60px;
+        box-shadow: 0 15px 30px rgba(255, 255, 255, 0.1);
+    }
+    .header h1 { margin: 0; letter-spacing: 12px; font-size: 32px; font-weight: 900; text-shadow: 0 0 20px #fff; }
+
+    /* 메인 그리드 레이아웃 세로 비율 강조 */
+    .main-grid { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 60px; }
+
+    /* 캐릭터 정보 출력창 세련되게 */
+    .subject-info {
+        border: 2px solid var(--theme-color, #fff); padding: 25px; background: rgba(5, 5, 5, 0.8);
+        box-shadow: inset 0 0 30px rgba(255,255,255,0.05), var(--base-glow);
+        position: relative; transition: 0.5s;
+    }
+    /* 좌우 테마 색상 적용 */
+    #info1 { --theme-color: var(--theme-color1); }
+    #info2 { --theme-color: var(--theme-color2); }
+
+    .photo-frame {
+        width: 100%; aspect-ratio: 3/4; border: 1px solid rgba(255,255,255,0.2);
+        margin-bottom: 25px; overflow: hidden; position: relative;
+    }
+    .photo-frame img { width: 100%; height: 100%; object-fit: cover; }
+    
+    .text-data {
+        font-family: 'Orbitron'; font-size: 20px; letter-spacing: 3px;
+        margin-bottom: 10px; color: #fff; text-shadow: 0 0 10px #fff;
+    }
+    .attr-data {
+        font-family: 'Noto Sans KR'; font-size: 15px; color: var(--arch-gold);
+    }
+
+    /* 중앙 싱크율 표시 영역 */
+    .center-display {
+        text-align: center; position: relative; margin: 60px 0;
+        border-top: 1px solid #333; border-bottom: 1px solid #333; padding: 40px 0;
+    }
+    .arch-logo {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 500px; opacity: 0.18; pointer-events: none;
+    }
+    .sync-val { font-size: 160px; font-weight: 900; text-shadow: 0 0 50px #fff, 0 0 100px #fff; margin: 20px 0; font-style: italic; }
+    .rank-badge { font-size: 36px; border: 3px solid #fff; padding: 10px 50px; box-shadow: 0 0 20px #fff; }
+
+    /* 하단 전술 데코 */
+    .tac-deco {
+        font-size: 12px; color: #555; letter-spacing: 3px; border-top: 1px solid #222; padding-top: 15px;
+        position: absolute; bottom: 150px; left: 50px;
+    }
+</style>
+</head>
+<body>
+
+<div id="top-controls">
+    <button onclick="calc()">ANALYZE</button>
+    <button onclick="saveImage()">SAVE RESULT</button>
+</div>
+
+<div id="capture">
+    <div class="input-ui" id="input-area">
+        <div class="ui-panel">
+            <div class="file-input-wrapper">
+                <div class="file-btn-desc">PHOTO</div>
+                <input type="file" id="file1">
+            </div>
+            <input type="text" id="nameInput1" placeholder="NAME A">
+            <select id="attrInput1" onchange="updateTheme(1)">
+                <option value="">속성</option>
+                <option value="pyre">🔥 불 (Pyre)</option>
+                <option value="aqua">💧 물 (Aqua)</option>
+                <option value="verde">🌿 풀 (Verde)</option>
+                <option value="fulmen">⚡ 번개 (Fulmen)</option>
+                <option value="aero">💨 바람 (Aero)</option>
+                <option value="glacies">❄️ 얼음 (Glacies)</option>
+                <option value="none">⚪ 무속성</option>
+            </select>
+        </div>
+        <div class="ui-panel">
+            <div class="file-input-wrapper">
+                <div class="file-btn-desc">PHOTO</div>
+                <input type="file" id="file2">
+            </div>
+            <input type="text" id="nameInput2" placeholder="NAME B">
+            <select id="attrInput2" onchange="updateTheme(2)">
+                <option value="">속성</option>
+                <option value="pyre">🔥 불 (Pyre)</option>
+                <option value="aqua">💧 물 (Aqua)</option>
+                <option value="verde">🌿 풀 (Verde)</option>
+                <option value="fulmen">⚡ 번개 (Fulmen)</option>
+                <option value="aero">💨 바람 (Aero)</option>
+                <option value="glacies">❄️ 얼음 (Glacies)</option>
+                <option value="none">⚪ 무속성</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="header">
+        <div style="font-size: 12px; color: #777;">DOC_VER: 1.0</div>
+        <h1>ARCH_SYNC_MONITOR</h1>
+        <div style="font-size: 12px; color: var(--arch-gold);">OFFICIAL_WORLD_GUIDE</div>
+    </div>
+
+    <div class="main-grid">
+        <div class="subject-info" id="info1">
+            <div class="photo-frame"><img id="img1"></div>
+            <div class="text-data" id="outName1">SUBJECT_A</div>
+            <div class="attr-data" id="outAttr1">[속성 미선택]</div>
+        </div>
+
+        <div class="subject-info" id="info2">
+            <div class="photo-frame"><img id="img2"></div>
+            <div class="text-data" id="outName2">SUBJECT_B</div>
+            <div class="attr-data" id="outAttr2">[속성 미선택]</div>
+        </div>
+    </div>
+
+    <div class="center-display">
+        <img src="「ARCH」 Symbol Logo White Ver.png" class="arch-logo">
+        <div style="font-size: 16px; letter-spacing: 6px; color: #aaa;">SYNCHRONIZATION RATE</div>
+        <div class="sync-val" id="percent">--%</div>
+        <div class="rank-badge" id="rank">RANK --</div>
+    </div>
+
+    <div class="tac-deco">
+        DATA_SOURCE: NEURAL_LINK_STATION // ENCRYPTION: ACTIVE // CONFIDENTIAL
+    </div>
+</div>
+
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<script>
+    file1.onchange = e => img1.src = URL.createObjectURL(e.target.files[0]);
+    file2.onchange = e => img2.src = URL.createObjectURL(e.target.files[0]);
+
+    // 속성별 네온 컬러 정의
+    const attrColors = {
+        pyre: '#ff4d00', // 불
+        aqua: '#0088ff', // 물
+        verde: '#00ff66', // 풀
+        fulmen: '#f2ff00', // 번개
+        aero: '#00ffcc', // 바람
+        glacies: '#a0e9ff', // 얼음
+        none: '#ffffff' // 무속성
+    };
+
+    // 속성 선택 시 테마 색상 변경 함수
+    function updateTheme(id) {
+        const select = document.getElementById('attrInput' + id);
+        const theme = select.value;
+        const color = attrColors[theme] || '#ffffff';
+        
+        // CSS 변수 업데이트
+        document.documentElement.style.setProperty('--theme-color' + id, color);
+    }
+
+    function calc(){
+        document.getElementById('outName1').innerText = document.getElementById('nameInput1').value || 'SUBJECT_A';
+        document.getElementById('outAttr1').innerText = document.getElementById('attrInput1').options[document.getElementById('attrInput1').selectedIndex].text || '[속성 미선택]';
+        document.getElementById('outName2').innerText = document.getElementById('nameInput2').value || 'SUBJECT_B';
+        document.getElementById('outAttr2').innerText = document.getElementById('attrInput2').options[document.getElementById('attrInput2').selectedIndex].text || '[속성 미선택]';
+
+        if(!img1.src || !img2.src) { alert("이미지를 업로드해주세요."); return; }
+
+        const p = Math.floor(Math.random()*101);
+        percent.innerText = p + "%";
+
+        let r = "C";
+        if(p > 99) r = "SSS"; else if(p > 90) r = "S"; else if(p > 75) r = "A"; else if(p > 50) r = "B";
+        rank.innerText = "RANK " + r;
+        
+        // 싱크 수치에 따른 광선 효과 강조
+        percent.style.textShadow = `0 0 ${p/2}px #fff, 0 0 ${p}px #fff`;
+    }
+
+    function saveImage(){
+        const inputArea = document.getElementById('input-area');
+        inputArea.style.display = 'none';
+
+        html2canvas(document.querySelector("#capture"), {
+            backgroundColor: "#000",
+            scale: 2 // 고화질 저장
+        }).then(canvas => {
+            const link = document.createElement("a");
+            link.download = "ARCH_SYNC_RESULT.png";
+            link.href = canvas.toDataURL();
+            link.click();
+            inputArea.style.display = 'flex';
+        });
+    }
+</script>
+</body>
+</html>
