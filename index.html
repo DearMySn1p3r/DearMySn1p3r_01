@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ARCH_SYNC_INTERFACE_v7.0_BW</title>
+<title>ARCH SYNC INTERFACE</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+KR:wght@100;300;500;700&display=swap');
@@ -40,6 +40,8 @@ body{
 #cursor::before{top:50%;left:-5px;right:-5px;height:1px;}
 #cursor::after{left:50%;top:-5px;bottom:-5px;width:1px;}
 .click-anim{width:20px !important;height:20px !important;background:rgba(255,255,255,.3);box-shadow:0 0 25px var(--accent) !important;}
+#cursor.over-frame{width:30px;height:30px;background:rgba(255,255,255,.07);}
+#cursor.grabbing{width:22px;height:22px;background:rgba(255,255,255,.22);box-shadow:0 0 22px #fff;}
 
 /* ---- GLOBAL FX ---- */
 .scanline{position:fixed;inset:0;background:linear-gradient(rgba(0,0,0,0) 50%,rgba(255,255,255,.03) 50%);background-size:100% 4px;pointer-events:none;z-index:9000;}
@@ -98,7 +100,8 @@ body{
 .frame{position:relative;width:100%;aspect-ratio:1/1;border:1px solid rgba(255,255,255,.2);background:#050505;overflow:hidden;}
 .frame .placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--dim);font-size:11px;letter-spacing:2px;text-align:center;}
 .frame .placeholder .ph-logo{width:48px;height:48px;object-fit:contain;opacity:.55;filter:drop-shadow(0 0 8px rgba(255,255,255,.5));}
-.frame img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;transform-origin:0 0;display:none;will-change:transform;}
+.frame img{position:absolute;top:0;left:0;display:none;will-change:left,top,width,height;-webkit-user-drag:none;user-select:none;}
+.frame.loaded{cursor:none;}
 .zoom-ui{position:absolute;right:8px;bottom:8px;display:flex;gap:5px;z-index:5;}
 .zoom-ui button{width:26px;height:26px;padding:0;font-size:14px;line-height:1;font-weight:900;border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.7);color:#fff;}
 .zoom-ui button:hover{background:#fff;color:#000;}
@@ -146,11 +149,6 @@ input[type=text],select,input[type=file]{width:100%;background:rgba(0,0,0,.8);bo
 input[type=file]{font-size:11px;font-family:monospace;padding:8px;}
 input:focus,select:focus{border-color:#fff;box-shadow:0 0 14px rgba(255,255,255,.3);}
 select option{background:#000;}
-
-.mode-tabs{display:flex;gap:2px;background:rgba(255,255,255,.05);padding:2px;border:1px solid var(--dimmer);margin-bottom:14px;}
-.mode-tab{flex:1;text-align:center;padding:9px 4px;font-size:10px;letter-spacing:2px;color:var(--dim);font-weight:900;transition:.25s;}
-.mode-tab:hover{color:#fff;text-shadow:0 0 5px #fff;}
-.mode-tab.active{color:#000;background:#fff;box-shadow:0 0 14px rgba(255,255,255,.5);}
 
 .btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;}
 .btn{flex:1;min-width:120px;padding:13px;background:transparent;color:#fff;border:1px solid #fff;font-family:var(--font);font-weight:900;letter-spacing:2px;font-size:11px;transition:.3s;position:relative;overflow:hidden;text-shadow:0 0 6px #fff;}
@@ -261,7 +259,7 @@ select option{background:#000;}
         <div class="cell"><span class="lbl">평가 등급 / GRADE</span><span class="val" id="v-grade">--</span></div>
         <div class="cell"><span class="lbl">각인 가능성 / IMPRINT</span><span class="val" id="v-imprint">--</span></div>
         <div class="cell"><span class="lbl">중독 위험도 / ADDICT</span><span class="val" id="v-addict">--</span></div>
-        <div class="cell"><span class="lbl">속성 상성 / REACTION</span><span class="val" id="v-react">--</span></div>
+        <div class="cell"><span class="lbl">공명 징후 / SIGNAL</span><span class="val" id="v-react">--</span></div>
     </div>
 </div>
 
@@ -301,10 +299,7 @@ select option{background:#000;}
 
     <div>
         <h3>// ANALYSIS_CORE</h3>
-        <div class="mode-tabs">
-            <div class="mode-tab active" data-mode="fate" onclick="switchMode('fate')">▶ 운명 측정 (FATE)</div>
-            <div class="mode-tab" data-mode="chaos" onclick="switchMode('chaos')">▶ 혼돈 측정 (CHAOS)</div>
-        </div>
+        <p style="font-size:10px;color:var(--dim);font-family:monospace;letter-spacing:1px;margin:0 0 14px;">* 측정값은 매번 무작위로 산출됩니다 (PURE_RANDOM).</p>
         <div class="btn-row">
             <button class="btn" onclick="analyze()">ANALYZE_SYNC</button>
             <button class="btn" onclick="diagnose()">진단서 출력</button>
@@ -331,7 +326,6 @@ const ATTR={
     glacies:{label:'얼음 (Glacies)',  emoji:'❄️', color:'#a9e8ff'}
 };
 const STATE={1:{attr:'none'},2:{attr:'none'}};
-let MODE='fate';
 
 /* populate selects */
 ['attr-sel1','attr-sel2'].forEach(id=>{
@@ -373,88 +367,104 @@ function updateTheme(id){
 }
 
 /* ===== IMAGE ZOOM / PAN ===== */
-const Z={1:{s:1,x:0,y:0,loaded:false},2:{s:1,x:0,y:0,loaded:false}};
+const Z={1:null,2:null};
 function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
 
-function applyTransform(id){
-    const img=document.getElementById('img'+id);
-    const frame=document.getElementById('frame'+id);
-    const z=Z[id];const w=frame.clientWidth,h=frame.clientHeight;
-    z.s=clamp(z.s,1,6);
-    z.x=clamp(z.x,w*(1-z.s),0);
-    z.y=clamp(z.y,h*(1-z.s),0);
-    img.style.transform=`translate(${z.x}px,${z.y}px) scale(${z.s})`;
-    document.getElementById('zoomtag'+id).innerText='x'+z.s.toFixed(1);
-}
-function loadImg(id,file){
-    const url=URL.createObjectURL(file);
-    const img=document.getElementById('img'+id);
-    img.onload=()=>{img.style.display='block';Z[id]={s:1,x:0,y:0,loaded:true};applyTransform(id);
-        document.querySelector('#frame'+id+' .placeholder').style.display='none';};
-    img.src=url;
-}
-function zoomBtn(id,dir){
-    const z=Z[id];if(!z.loaded&&dir!==0)return;
-    if(dir===0){Z[id]={...z,s:1,x:0,y:0};}else{z.s+=dir*0.3;}
-    applyTransform(id);
-}
 function setupFrame(id){
     const frame=document.getElementById('frame'+id);
+    const img=document.getElementById('img'+id);
+    const tag=document.getElementById('zoomtag'+id);
+    const z={natW:0,natH:0,baseW:0,baseH:0,scale:1,x:0,y:0,loaded:false};
+    Z[id]=z;
+
+    function apply(){
+        const fw=frame.clientWidth,fh=frame.clientHeight;
+        z.scale=clamp(z.scale,1,6);
+        const dw=z.baseW*z.scale,dh=z.baseH*z.scale;
+        z.x=clamp(z.x,fw-dw,0);   // 이미지가 항상 프레임을 덮도록 경계 보정
+        z.y=clamp(z.y,fh-dh,0);
+        img.style.width=dw+'px';img.style.height=dh+'px';
+        img.style.left=z.x+'px';img.style.top=z.y+'px';
+        tag.innerText='x'+z.scale.toFixed(1);
+    }
+    function fit(){   // cover 기준으로 채우고 가운데 정렬
+        const fw=frame.clientWidth,fh=frame.clientHeight;
+        const cover=Math.max(fw/z.natW,fh/z.natH);
+        z.baseW=z.natW*cover;z.baseH=z.natH*cover;z.scale=1;
+        z.x=(fw-z.baseW)/2;z.y=(fh-z.baseH)/2;apply();
+    }
+    z._apply=apply;z._fit=fit;
+
+    z.load=file=>{
+        const url=URL.createObjectURL(file);
+        img.onload=()=>{
+            z.natW=img.naturalWidth;z.natH=img.naturalHeight;z.loaded=true;
+            img.style.display='block';
+            frame.querySelector('.placeholder').style.display='none';
+            frame.classList.add('loaded');
+            fit();
+        };
+        img.src=url;
+    };
+
+    // 휠: 커서 위치 기준 확대/축소
     frame.addEventListener('wheel',e=>{
-        if(!Z[id].loaded)return;e.preventDefault();
+        if(!z.loaded)return;e.preventDefault();
         const r=frame.getBoundingClientRect();
-        const px=e.clientX-r.left,py=e.clientY-r.top;
-        const z=Z[id];const old=z.s;
+        const px=e.clientX-r.left,py=e.clientY-r.top,old=z.scale;
         const ns=clamp(old*(e.deltaY<0?1.12:0.89),1,6);
         z.x=px-(px-z.x)*(ns/old);
         z.y=py-(py-z.y)*(ns/old);
-        z.s=ns;applyTransform(id);
+        z.scale=ns;apply();
     },{passive:false});
+
+    // 드래그 이동 (어디서든 잡고 끌기)
     let drag=false,lx=0,ly=0;
     frame.addEventListener('pointerdown',e=>{
-        if(!Z[id].loaded||e.target.tagName==='BUTTON')return;
-        drag=true;lx=e.clientX;ly=e.clientY;frame.setPointerCapture(e.pointerId);
+        if(!z.loaded||e.target.tagName==='BUTTON')return;
+        drag=true;lx=e.clientX;ly=e.clientY;
+        frame.setPointerCapture(e.pointerId);
+        cursor.classList.add('grabbing');
     });
     frame.addEventListener('pointermove',e=>{
         if(!drag)return;
-        Z[id].x+=e.clientX-lx;Z[id].y+=e.clientY-ly;lx=e.clientX;ly=e.clientY;applyTransform(id);
+        z.x+=e.clientX-lx;z.y+=e.clientY-ly;lx=e.clientX;ly=e.clientY;apply();
     });
-    frame.addEventListener('pointerup',()=>drag=false);
-    frame.addEventListener('pointercancel',()=>drag=false);
+    const stop=()=>{drag=false;cursor.classList.remove('grabbing');};
+    frame.addEventListener('pointerup',stop);
+    frame.addEventListener('pointercancel',stop);
+    // 커서 힌트
+    frame.addEventListener('pointerenter',()=>{if(z.loaded)cursor.classList.add('over-frame');});
+    frame.addEventListener('pointerleave',()=>cursor.classList.remove('over-frame'));
+    // 더블클릭 = 리셋
+    frame.addEventListener('dblclick',()=>{if(z.loaded)fit();});
+}
+function zoomBtn(id,dir){
+    const z=Z[id];if(!z||!z.loaded)return;
+    if(dir===0){z._fit();return;}
+    const frame=document.getElementById('frame'+id);
+    const fw=frame.clientWidth,fh=frame.clientHeight,px=fw/2,py=fh/2,old=z.scale;
+    const ns=clamp(old+dir*0.3,1,6);
+    z.x=px-(px-z.x)*(ns/old);z.y=py-(py-z.y)*(ns/old);
+    z.scale=ns;z._apply();
 }
 setupFrame(1);setupFrame(2);
-document.getElementById('file1').onchange=e=>{if(e.target.files[0])loadImg(1,e.target.files[0]);};
-document.getElementById('file2').onchange=e=>{if(e.target.files[0])loadImg(2,e.target.files[0]);};
+addEventListener('resize',()=>{[1,2].forEach(i=>{if(Z[i]&&Z[i].loaded)Z[i]._fit();});});
+document.getElementById('file1').onchange=e=>{if(e.target.files[0])Z[1].load(e.target.files[0]);};
+document.getElementById('file2').onchange=e=>{if(e.target.files[0])Z[2].load(e.target.files[0]);};
 
-/* ===== COMPATIBILITY ENGINE ===== */
-function hash(str){let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
-function pairKey(a,b){return [a,b].sort().join('-');}
+/* ===== RANDOM SIGNAL POOL (상성 없음 · 순수 랜덤) ===== */
+const SIGNALS=[
+    '🌐 안정적 공명 — 파장 정렬됨',
+    '📡 미세 간섭 — 주기적 흔들림 감지',
+    '💠 깊은 동조 — 파장 융합 진행',
+    '⚠️ 불규칙 파동 — 모니터링 요망',
+    '🔆 과공명 — 출력 급상승',
+    '🌫️ 위상 차 — 동기화 지연',
+    '🩶 평이한 연계 — 특이사항 없음',
+    '✴️ 공명 스파이크 — 순간 동기화'
+];
 
-const COMPAT={
-    'aqua-pyre':   {mod:-16,txt:'💥 증기 폭발 — 파장 충돌'},
-    'glacies-pyre':{mod:-13,txt:'🌫️ 급격한 온도차 — 균열 발생'},
-    'pyre-verde':  {mod:-9, txt:'🔥 연소 — 풀 속성 잠식'},
-    'aero-pyre':   {mod: 12,txt:'🌪️ 화염 확산 — 공격 시너지'},
-    'aqua-verde':  {mod: 12,txt:'🌱 생장 촉진 — 안정적 공명'},
-    'aqua-fulmen': {mod: 7, txt:'⚡ 전도 증폭 — 고위험 고출력'},
-    'aqua-glacies':{mod: 9, txt:'🧊 동결 연계 — 광역 장악'},
-    'aero-fulmen': {mod: 10,txt:'⚡ 속도 가속 — 섬멸 특화'},
-    'fulmen-glacies':{mod:-6,txt:'❄️ 전도 저하 — 출력 불안정'},
-    'aero-glacies':{mod: 6, txt:'🌬️ 한기 확산 — 제압 연계'},
-    'aero-verde':  {mod: 5, txt:'🍃 포자 확산 — 영역 제어'},
-    'fulmen-pyre': {mod: 4, txt:'🔥 과부하 — 폭발적 화력'},
-    'fulmen-verde':{mod:-4, txt:'🌿 신경 교란 — 미세 불안정'},
-    'glacies-verde':{mod:-5,txt:'🥶 생장 둔화 — 효율 저하'},
-    'aero-aqua':   {mod: 3, txt:'🌊 기류 순환 — 무난한 연계'}
-};
-function compat(a,b){
-    if(a===b){
-        if(a==='none')return{mod:10,txt:'🤍 무속성 공명 — 가장 순수한 동기화'};
-        return{mod:13,txt:(ATTR[a].emoji||'')+' 동일 속성 공명 — 파장 일치'};
-    }
-    if(a==='none'||b==='none')return{mod:6,txt:'🤍 순수 파장 — 정신 정화 / 안정화'};
-    return COMPAT[pairKey(a,b)]||{mod:0,txt:'⚪ 표준 간섭 — 특이사항 없음'};
-}
 
 function getStatus(p){
     if(p>=95)return'완전 동기화 (PERFECT SYNC)';
@@ -482,27 +492,17 @@ const RECS=[
     "분리 임무 금지 권고. 동선 일치율 90% 이상 유지 요망."
 ];
 
-/* compute deterministic-or-random result */
+/* compute pure-random result (매번 무작위, 상성 미적용) */
 function compute(){
     const nA=document.getElementById('nameInput1').value.trim()||'미상_A';
     const nB=document.getElementById('nameInput2').value.trim()||'미상_B';
     const aA=STATE[1].attr,aB=STATE[2].attr;
-    const c=compat(aA,aB);
-    let sync,addict,rec,diagNo;
-    if(MODE==='chaos'){
-        sync=Math.floor(Math.random()*101);
-        addict=Math.floor(Math.random()*85+15);
-        rec=RECS[Math.floor(Math.random()*RECS.length)];
-        diagNo=Math.random().toString(36).substr(2,8).toUpperCase();
-    }else{
-        const h=hash(nA+'::'+nB)^hash(nB+'::'+nA);
-        const base=50+(h%38);                 // 50..87
-        sync=clamp(base+c.mod,3,100);
-        addict=(hash(nA+nB)%80)+15;
-        rec=RECS[hash(nA+aA+nB+aB)%RECS.length];
-        diagNo=(h>>>0).toString(36).substr(0,8).toUpperCase().padStart(8,'0');
-    }
-    return {nA,nB,aA,aB,sync,addict,rec,diagNo,reaction:c.txt,
+    const sync=Math.floor(Math.random()*101);
+    const addict=Math.floor(Math.random()*85+15);
+    const rec=RECS[Math.floor(Math.random()*RECS.length)];
+    const signal=SIGNALS[Math.floor(Math.random()*SIGNALS.length)];
+    const diagNo=Math.random().toString(36).substr(2,8).toUpperCase();
+    return {nA,nB,aA,aB,sync,addict,rec,diagNo,reaction:signal,
         grade:getGrade(sync),imprint:getImprint(sync),rank:getRank(sync),status:getStatus(sync)};
 }
 
@@ -514,7 +514,7 @@ function analyze(){
     const r=compute();LAST=r;
 
     setTimeout(()=>{
-        document.getElementById('diag-no').innerText=(MODE==='chaos'?'CHAOS-':'HD-')+r.diagNo;
+        document.getElementById('diag-no').innerText='HD-'+r.diagNo;
         const pEl=document.getElementById('percent');
         pEl.innerText=r.sync+'%';pEl.classList.remove('glitch');pEl.style.color='#fff';
         document.getElementById('status').innerText=r.status;
@@ -567,7 +567,7 @@ function diagnose(){
     const r=LAST||compute();
     let d='=================================\n';
     d+='[ HARMONY DIVISION: PAIRING DIAGNOSTIC ]\n';
-    d+=`DIAGNOSTIC_NO: ${MODE==='chaos'?'CHAOS-':'HD-'}${r.diagNo}\n`;
+    d+=`DIAGNOSTIC_NO: HD-${r.diagNo}\n`;
     d+='=================================\n\n';
     d+='▶ 진단 대상\n';
     d+=`- SUBJECT_A: ${r.nA} [${ATTR[r.aA].label}]\n`;
@@ -577,7 +577,7 @@ function diagnose(){
     d+=`- 평가 등급: ${r.grade}\n`;
     d+=`- 각인 가능성: ${r.imprint}\n`;
     d+=`- 가이딩 중독 위험도: ${r.addict}% [${r.addict>70?'고위험 / 격리 필요':r.addict>45?'주의 / 모니터링':'안정 범주'}]\n`;
-    d+=`- 속성 상성: ${r.reaction}\n\n`;
+    d+=`- 공명 징후: ${r.reaction}\n\n`;
     let note;
     if(r.sync<50)note='정신 파장 불일치. 페어링 시 양측 모두 위험. 즉시 재배정 권장.';
     else if(r.sync<71)note='기본 임무 수행 가능 수준. 단기 페어링에 한해 운용.';
@@ -602,13 +602,6 @@ function clearErrors(){
     document.getElementById('error-container').innerHTML='';
     document.getElementById('percent').classList.remove('glitch');
     notify('ALERTS_CLEARED');
-}
-
-/* ===== MODE ===== */
-function switchMode(m){
-    MODE=m;
-    document.querySelectorAll('.mode-tab').forEach(t=>t.classList.toggle('active',t.dataset.mode===m));
-    notify('MODE: '+(m==='fate'?'FATE_DETERMINISTIC':'CHAOS_RANDOM'));
 }
 
 /* ===== SAVE ===== */
