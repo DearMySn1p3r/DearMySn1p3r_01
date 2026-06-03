@@ -1,323 +1,641 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARCH_SYNC_v6.0</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Noto+Sans+KR:wght@300;700&display=swap');
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARCH_SYNC_INTERFACE_v7.0_BW</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+KR:wght@100;300;500;700&display=swap');
 
-        :root {
-            --neon-cyan: #00f2ff;
-            --arch-gold: #d4af37;
-            --theme-color1: #ffffff;
-            --theme-color2: #ffffff;
-        }
+:root{
+    --bg:#000000;
+    --accent:#ffffff;
+    --dim:rgba(255,255,255,0.4);
+    --dimmer:rgba(255,255,255,0.1);
+    --sys-main:#ffffff;
+    --font:'Orbitron','Noto Sans KR',sans-serif;
+    --c1:#ffffff;
+    --c2:#ffffff;
+}
 
-        body {
-            margin: 0; background: #050505; color: #fff;
-            font-family: 'Orbitron', 'Noto Sans KR', sans-serif;
-            display: flex; flex-direction: column; align-items: center; min-height: 100vh;
-            padding: 20px; overflow-x: hidden; cursor: none;
-        }
+*{box-sizing:border-box;outline:none;cursor:none !important;}
+::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar-thumb{background:var(--sys-main);}
 
-        .cursor-light {
-            position: fixed; width: 250px; height: 250px;
-            background: radial-gradient(circle, rgba(255,255,255,0.15), transparent 70%);
-            pointer-events: none; transform: translate(-50%, -50%); z-index: 10000;
-        }
+body{
+    margin:0;background:var(--bg);color:var(--accent);
+    font-family:var(--font);min-height:100vh;
+    display:flex;flex-direction:column;align-items:center;
+    padding:25px 20px 60px;user-select:none;overflow-x:hidden;
+}
 
-        #top-controls { margin-bottom: 20px; display: flex; gap: 15px; z-index: 5000; }
-        button {
-            background: transparent; border: 1px solid var(--neon-cyan); color: var(--neon-cyan);
-            padding: 10px 30px; cursor: pointer; font-family: 'Orbitron'; font-weight: bold;
-            transition: 0.3s; text-transform: uppercase;
-        }
-        button:hover { background: var(--neon-cyan); color: #000; box-shadow: 0 0 20px var(--neon-cyan); }
+/* ---- CURSOR ---- */
+#cursor{
+    position:fixed;width:40px;height:40px;border:1px solid var(--sys-main);
+    border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);z-index:10000;
+    transition:width .1s,height .1s,background-color .1s;box-shadow:0 0 15px rgba(255,255,255,.4);
+}
+#cursor::before,#cursor::after{content:'';position:absolute;background:var(--sys-main);}
+#cursor::before{top:50%;left:-5px;right:-5px;height:1px;}
+#cursor::after{left:50%;top:-5px;bottom:-5px;width:1px;}
+.click-anim{width:20px !important;height:20px !important;background:rgba(255,255,255,.3);box-shadow:0 0 25px var(--accent) !important;}
 
-        .result-animate {
-            opacity: 0; transform: translateY(30px) scale(0.95); filter: blur(10px);
-            transition: 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .result-animate.show { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+/* ---- GLOBAL FX ---- */
+.scanline{position:fixed;inset:0;background:linear-gradient(rgba(0,0,0,0) 50%,rgba(255,255,255,.03) 50%);background-size:100% 4px;pointer-events:none;z-index:9000;}
+.noise-bg{position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");}
 
-        #capture {
-            width: 1200px; height: 800px; background: #000;
-            position: relative; padding: 40px; box-sizing: border-box;
-            border: 2px solid #333; display: flex; flex-direction: column;
-            background-image: 
-                linear-gradient(rgba(0, 242, 255, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 242, 255, 0.05) 1px, transparent 1px),
-                radial-gradient(circle at center, #111 0%, #000 100%);
-            background-size: 40px 40px, 40px 40px, 100% 100%;
-            overflow: hidden;
-        }
+/* ---- BOOT ---- */
+#boot-screen{position:fixed;inset:0;background:#000;z-index:20000;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.loading-text{font-size:18px;letter-spacing:12px;color:var(--sys-main);font-weight:700;margin-bottom:20px;animation:textGlitch .1s infinite;text-shadow:0 0 15px var(--sys-main);}
+.loading-bar{width:400px;max-width:80vw;height:1px;background:rgba(255,255,255,.2);}
+.loading-fill{height:100%;background:var(--sys-main);width:0;box-shadow:0 0 20px var(--sys-main);animation:fillBar 1.6s forwards ease-in-out;}
+@keyframes fillBar{100%{width:100%;}}
+@keyframes textGlitch{0%{transform:translate(0)}20%{transform:translate(-2px,1px)}40%{transform:translate(-1px,-1px)}60%{transform:translate(2px,1px)}80%{transform:translate(1px,-1px)}100%{transform:translate(0)}}
 
-        /* ⭐ 수정된 Photo Frame (Background 방식) */
-        .photo-frame { 
-            width: 100%; aspect-ratio: 1/1; 
-            border: 1px solid rgba(255,255,255,0.2); 
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-image: url('「ARCH」 Symbol Logo White Ver.png'); /* 기본 로고 */
-            background-color: #050505;
-        }
-        .photo-frame img { display: none; } /* img 태그 숨김 */
+/* ---- NOTIFICATION ---- */
+#system-notif{position:fixed;bottom:30px;right:30px;width:340px;max-width:80vw;background:rgba(255,255,255,.95);color:#000;padding:18px 25px;font-weight:900;display:none;z-index:11000;letter-spacing:1px;font-size:12px;border-left:5px solid #000;box-shadow:0 10px 30px rgba(255,255,255,.2);}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
 
-        .scanline {
-            position: absolute; width: 100%; height: 2px;
-            background: rgba(255,255,255,0.4); box-shadow: 0 0 20px white;
-            top: 0; animation: scan 3s linear infinite; pointer-events: none; z-index: 10;
-        }
-        @keyframes scan { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+/* ---- TOP CONTROLS ---- */
+#bar{width:1200px;max-width:96vw;display:flex;justify-content:space-between;align-items:center;
+    border-bottom:2px solid var(--sys-main);padding:0 6px 14px;margin-bottom:22px;
+    box-shadow:0 14px 25px -22px rgba(255,255,255,.5);}
+#bar .left{display:flex;align-items:center;gap:18px;}
+#bar .brand{height:34px;width:34px;object-fit:contain;filter:drop-shadow(0 0 12px rgba(255,255,255,.9));}
+#bar h1{margin:0;font-size:22px;font-weight:900;letter-spacing:5px;text-shadow:0 0 12px rgba(255,255,255,.6);}
+#bar .sub{font-weight:500;letter-spacing:5px;font-size:12px;color:var(--dim);}
+#bar .right{text-align:right;font-size:11px;color:var(--dim);line-height:1.6;font-family:monospace;}
+#bar .right b{color:#fff;text-shadow:0 0 5px #fff;font-weight:700;}
 
-        .glitch { animation: glitch 0.2s infinite; color: #ff0044 !important; text-shadow: 2px 2px #00f2ff !important; }
-        @keyframes glitch { 0% { transform: translate(0); } 25% { transform: translate(-3px,2px); } 50% { transform: translate(3px,-2px); } 100% { transform: translate(0); } }
+/* ============ CAPTURE CARD ============ */
+#capture{
+    width:1200px;max-width:96vw;background:#000;position:relative;
+    padding:36px;border:1px solid var(--dimmer);box-shadow:0 0 40px rgba(255,255,255,.06);
+    overflow:hidden;
+    background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px),
+        radial-gradient(circle at center,#0b0b0b 0%,#000 100%);
+    background-size:42px 42px,42px 42px,100% 100%;
+}
+.cap-scan{position:absolute;left:0;width:100%;height:2px;background:rgba(255,255,255,.45);box-shadow:0 0 22px #fff;top:0;animation:scan 3.4s linear infinite;pointer-events:none;z-index:8;}
+@keyframes scan{0%{top:0;opacity:0}8%{opacity:1}100%{top:100%;opacity:0}}
 
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #fff; padding-bottom: 15px; margin-bottom: 30px; }
-        .header h1 { margin: 0; letter-spacing: 8px; font-size: 26px; text-shadow: 0 0 10px #fff; }
+.cap-head{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--dimmer);padding-bottom:12px;margin-bottom:26px;font-size:11px;color:var(--dim);font-family:monospace;letter-spacing:2px;position:relative;z-index:6;}
+.cap-head .mid{font-family:var(--font);font-weight:900;font-size:14px;color:#fff;letter-spacing:6px;text-shadow:0 0 10px #fff;}
 
-        .main-grid { display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 30px; flex: 1; align-items: center; z-index: 5; }
+.main-grid{display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:26px;align-items:stretch;position:relative;z-index:6;}
 
-        .subject-info { 
-            display: flex; flex-direction: column; gap: 15px; padding: 25px; 
-            background: rgba(255,255,255,0.03); border: 2px solid var(--theme-color); 
-            transition: 0.5s; box-shadow: inset 0 0 20px rgba(255,255,255,0.05);
-        }
-        #info1 { --theme-color: var(--theme-color1); }
-        #info2 { --theme-color: var(--theme-color2); }
+/* ---- SUBJECT PANEL ---- */
+.subject{display:flex;flex-direction:column;gap:14px;padding:20px;background:rgba(255,255,255,.025);border:1px solid var(--theme);transition:.4s;box-shadow:inset 0 0 25px rgba(255,255,255,.04);}
+#info1{--theme:var(--c1);}
+#info2{--theme:var(--c2);}
+.subject.imprint{animation:imprintPulse 1.1s infinite;}
+@keyframes imprintPulse{0%,100%{box-shadow:inset 0 0 25px rgba(255,255,255,.04),0 0 5px var(--theme);}50%{box-shadow:inset 0 0 35px rgba(255,255,255,.12),0 0 28px var(--theme);}}
 
-        .text-display { font-size: 24px; font-weight: 900; letter-spacing: 2px; border-bottom: 1px solid #444; padding-bottom: 5px; color: #fff; }
-        .attr-display { font-size: 15px; color: var(--arch-gold); font-family: 'Noto Sans KR'; margin-top: 5px; }
+.frame{position:relative;width:100%;aspect-ratio:1/1;border:1px solid rgba(255,255,255,.2);background:#050505;overflow:hidden;}
+.frame .placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--dim);font-size:11px;letter-spacing:2px;text-align:center;}
+.frame .placeholder .ph-logo{width:48px;height:48px;object-fit:contain;opacity:.55;filter:drop-shadow(0 0 8px rgba(255,255,255,.5));}
+.frame img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;transform-origin:0 0;display:none;will-change:transform;}
+.zoom-ui{position:absolute;right:8px;bottom:8px;display:flex;gap:5px;z-index:5;}
+.zoom-ui button{width:26px;height:26px;padding:0;font-size:14px;line-height:1;font-weight:900;border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.7);color:#fff;}
+.zoom-ui button:hover{background:#fff;color:#000;}
+.zoom-tag{position:absolute;left:8px;top:8px;font-size:9px;font-family:monospace;color:var(--dim);background:rgba(0,0,0,.6);padding:2px 6px;border:1px solid var(--dimmer);letter-spacing:1px;}
 
-        .center-core { position: relative; text-align: center; }
-        .arch-logo { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 480px; opacity: 0.15; pointer-events: none; }
-        .sync-val { font-size: 130px; font-weight: 900; line-height: 1; text-shadow: 0 0 40px #fff; margin: 15px 0; font-style: italic; z-index: 1; position: relative; transition: 0.3s; }
-        #sync-status { font-size: 14px; color: var(--neon-cyan); letter-spacing: 3px; margin-bottom: 5px; font-weight: bold; }
-        .rank-badge { font-size: 26px; border: 2px solid #fff; padding: 8px 40px; box-shadow: 0 0 20px #fff; background: rgba(0,0,0,0.5); position: relative; z-index: 1; }
+.name-out{font-size:22px;font-weight:900;letter-spacing:2px;border-bottom:1px solid #444;padding-bottom:6px;color:#fff;word-break:break-all;}
+.attr-out{font-size:13px;color:var(--dim);font-family:'Noto Sans KR';display:flex;align-items:center;gap:6px;}
+.attr-out .dot{width:8px;height:8px;border-radius:50%;background:var(--theme);box-shadow:0 0 8px var(--theme);}
 
-        .input-ui { display: flex; justify-content: center; gap: 25px; margin-top: 30px; width: 1200px; padding: 20px; background: rgba(255,255,255,0.05); border: 1px solid #333; z-index: 5000; }
-        .ui-group { display: flex; gap: 12px; align-items: center; }
-        input[type=text], select { padding: 10px; background: #fff; border: none; font-weight: bold; font-family: 'Noto Sans KR'; cursor: default; }
+/* ---- CENTER CORE ---- */
+.core{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:330px;
+    opacity:0;transform:translateY(22px) scale(.96);filter:blur(8px);transition:.6s cubic-bezier(.16,1,.3,1);}
+.core.show{opacity:1;transform:none;filter:blur(0);}
+.radar{position:absolute;border:1px dashed rgba(255,255,255,.16);border-radius:50%;animation:rot 30s linear infinite;pointer-events:none;}
+@keyframes rot{100%{transform:rotate(360deg)}}
+.sweep{position:absolute;width:140px;height:1px;background:linear-gradient(90deg,transparent,#fff);top:50%;left:50%;transform-origin:0 0;animation:sweep 5s linear infinite;box-shadow:0 0 14px rgba(255,255,255,.5);pointer-events:none;}
+@keyframes sweep{100%{transform:rotate(360deg)}}
+.core-logo{position:absolute;width:160px;height:160px;object-fit:contain;opacity:.1;pointer-events:none;animation:pulseLogo 5s infinite;}
+@keyframes pulseLogo{0%,100%{opacity:.06;transform:scale(.98);}50%{opacity:.16;transform:scale(1.02);filter:drop-shadow(0 0 15px rgba(255,255,255,.6));}}
+.status{font-size:12px;color:#fff;letter-spacing:3px;font-weight:700;z-index:2;text-shadow:0 0 8px #fff;}
+.percent{font-size:108px;font-weight:900;line-height:1;font-style:italic;text-shadow:0 0 40px #fff;margin:6px 0;z-index:2;transition:.3s;}
+.rank{font-size:22px;border:1px solid #fff;padding:7px 34px;box-shadow:0 0 18px #fff;background:rgba(0,0,0,.5);z-index:2;letter-spacing:2px;}
+.reaction{margin-top:14px;font-size:12px;font-family:'Noto Sans KR';color:var(--dim);letter-spacing:.5px;z-index:2;min-height:16px;}
+.imprint-badge{margin-top:10px;font-size:11px;font-weight:900;letter-spacing:2px;color:#000;background:#fff;padding:5px 16px;z-index:2;display:none;box-shadow:0 0 18px #fff;animation:textGlitch .25s infinite;}
 
-        .error-popup {
-            position: absolute; width: 260px; background: #c0c0c0; border: 2px solid; border-color: #eee #888 #888 #eee; color: #000;
-            padding: 2px; font-family: 'Tahoma', sans-serif; font-size: 11px; z-index: 1000; box-shadow: 10px 10px 20px rgba(0,0,0,0.5);
-        }
-        .err-head { background: #000080; color: #fff; padding: 4px 6px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
-    </style>
+.glitch{color:#fff !important;animation:hardGlitch .18s infinite;}
+@keyframes hardGlitch{0%{transform:translate(0)}25%{transform:translate(-3px,2px)}50%{transform:translate(3px,-2px)}75%{transform:translate(-2px,-1px)}100%{transform:translate(0)}}
+
+/* ---- VERDICT STRIP (in capture) ---- */
+.verdict{margin-top:26px;border-top:1px solid var(--dimmer);padding-top:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:2px;position:relative;z-index:6;}
+.verdict .cell{background:rgba(255,255,255,.04);border:1px solid var(--dimmer);padding:12px 10px;text-align:center;}
+.verdict .lbl{font-size:9px;color:var(--dim);letter-spacing:1px;font-family:monospace;}
+.verdict .val{display:block;margin-top:6px;font-size:15px;font-weight:900;color:#fff;text-shadow:0 0 8px rgba(255,255,255,.6);font-family:'Noto Sans KR';}
+
+/* ---- ERROR POPUPS ---- */
+.error-popup{position:absolute;width:250px;background:#161616;border:1px solid #fff;color:#fff;padding:2px;font-family:'Tahoma',monospace;font-size:11px;z-index:200;box-shadow:6px 6px 18px rgba(0,0,0,.7);}
+.err-head{background:#fff;color:#000;padding:4px 6px;font-weight:bold;display:flex;justify-content:space-between;letter-spacing:1px;}
+
+/* ============ INTERACTIVE PANEL ============ */
+.console{width:1200px;max-width:96vw;margin-top:24px;border:1px solid var(--dimmer);background:rgba(8,8,8,.85);padding:22px;display:grid;grid-template-columns:1fr 1fr;gap:22px;}
+.console h3{margin:0 0 14px;font-size:12px;letter-spacing:3px;color:#fff;border-bottom:1px solid var(--dimmer);padding-bottom:8px;text-shadow:0 0 8px rgba(255,255,255,.5);}
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:9px;color:var(--dim);letter-spacing:1px;margin-bottom:5px;font-family:monospace;}
+input[type=text],select,input[type=file]{width:100%;background:rgba(0,0,0,.8);border:1px solid var(--dimmer);color:#fff;padding:11px;font-family:inherit;font-size:13px;transition:.3s;}
+input[type=file]{font-size:11px;font-family:monospace;padding:8px;}
+input:focus,select:focus{border-color:#fff;box-shadow:0 0 14px rgba(255,255,255,.3);}
+select option{background:#000;}
+
+.mode-tabs{display:flex;gap:2px;background:rgba(255,255,255,.05);padding:2px;border:1px solid var(--dimmer);margin-bottom:14px;}
+.mode-tab{flex:1;text-align:center;padding:9px 4px;font-size:10px;letter-spacing:2px;color:var(--dim);font-weight:900;transition:.25s;}
+.mode-tab:hover{color:#fff;text-shadow:0 0 5px #fff;}
+.mode-tab.active{color:#000;background:#fff;box-shadow:0 0 14px rgba(255,255,255,.5);}
+
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;}
+.btn{flex:1;min-width:120px;padding:13px;background:transparent;color:#fff;border:1px solid #fff;font-family:var(--font);font-weight:900;letter-spacing:2px;font-size:11px;transition:.3s;position:relative;overflow:hidden;text-shadow:0 0 6px #fff;}
+.btn:hover{background:#fff;color:#000;box-shadow:0 0 20px #fff;text-shadow:none;}
+.btn.danger{border-color:#fff;opacity:.7;}
+.btn::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);transition:.5s;}
+.btn:hover::before{left:100%;}
+
+#terminal{margin-top:14px;background:rgba(10,10,10,.85);border:1px solid var(--dimmer);padding:16px;font-family:monospace;font-size:12px;height:230px;overflow-y:auto;color:#ccc;line-height:1.7;white-space:pre-wrap;box-shadow:inset 0 0 28px rgba(0,0,0,1);}
+
+#log{margin-top:14px;font-family:monospace;font-size:11px;color:var(--dim);max-height:90px;overflow-y:auto;line-height:1.6;}
+#log b{color:#fff;}
+
+@media(max-width:780px){
+    .main-grid{grid-template-columns:1fr;}
+    .console{grid-template-columns:1fr;}
+    .percent{font-size:80px;}
+    #bar h1{font-size:16px;letter-spacing:3px;}
+    #bar .sub{display:none;}
+}
+</style>
 </head>
 <body>
 
-<div class="cursor-light" id="cursor"></div>
+<div id="cursor"></div>
+<div id="boot-screen">
+    <div class="loading-text">ARCH_SYNC_INITIALIZING</div>
+    <div class="loading-bar"><div class="loading-fill"></div></div>
+</div>
+<div id="system-notif">&gt;&gt; SYSTEM_MESSAGE</div>
+<div class="scanline"></div>
+<div class="noise-bg"></div>
 
-<div id="top-controls">
-    <button onclick="calcSync()">ANALYZE SYNC</button>
-    <button onclick="saveImage()">SAVE DATA</button>
-    <button onclick="shareResult()">SHARE</button>
-    <button onclick="clearErrors()" style="border-color: #f00; color: #f00;">CLEAR ALERTS</button>
+<!-- TOP BAR -->
+<div id="bar">
+    <div class="left">
+        <img class="brand" src="「ARCH」 Symbol Logo White Ver.png" alt="ARCH">
+        <h1>SYNC_INTERFACE</h1>
+        <span class="sub">| RESONANCE_ANALYSIS_v7.0</span>
+    </div>
+    <div class="right">
+        SYSTEM: <b>ONLINE</b> // HARMONY_LINK: <b>ACTIVE</b><br>
+        <b id="clock">00:00:00</b> KST
+    </div>
 </div>
 
+<!-- ============ CAPTURE CARD ============ -->
 <div id="capture">
-    <div class="scanline"></div>
+    <div class="cap-scan"></div>
     <div id="error-container"></div>
 
-    <div class="header">
-        <div style="font-size: 11px;">AUTH: OVERRIDE_v6.0</div>
-        <h1>ARCH_SYNC_INTERFACE</h1>
-        <div style="font-size: 11px; color: var(--arch-gold);">SYSTEM_INTEGRITY: ACTIVE</div>
+    <div class="cap-head">
+        <span>AUTH: HARMONY_OVERRIDE</span>
+        <span class="mid">PAIRING_RESONANCE_REPORT</span>
+        <span>DIAG_NO: <span id="diag-no">--------</span></span>
     </div>
 
     <div class="main-grid">
-        <div class="subject-info" id="info1">
-            <div class="photo-frame" id="frame1"></div>
-            <div class="text-display" id="outName1">SUBJECT_A</div>
-            <div class="attr-display" id="outAttr1">무속성 (None)</div>
+        <!-- SUBJECT A -->
+        <div class="subject" id="info1">
+            <div class="frame" id="frame1">
+                <span class="zoom-tag" id="zoomtag1">x1.0</span>
+                <div class="placeholder"><img class="ph-logo" src="「ARCH」 Symbol Logo White Ver.png" alt="">NO SIGNAL<br>SUBJECT_A</div>
+                <img id="img1" alt="">
+                <div class="zoom-ui">
+                    <button onclick="zoomBtn(1,-1)">−</button>
+                    <button onclick="zoomBtn(1,0)">⟲</button>
+                    <button onclick="zoomBtn(1,1)">+</button>
+                </div>
+            </div>
+            <div class="name-out" id="name1">SUBJECT_A</div>
+            <div class="attr-out" id="attr1"><span class="dot"></span>무속성 (None)</div>
         </div>
 
-        <div class="center-core result-animate" id="core-anim">
-            <img src="「ARCH」 Symbol Logo White Ver.png" class="arch-logo">
-            <div id="sync-status">INITIALIZING...</div>
-            <div class="sync-val" id="percent">--%</div>
-            <div class="rank-badge" id="rank">RANK --</div>
+        <!-- CORE -->
+        <div class="core" id="core">
+            <div class="radar" style="width:150px;height:150px;border-top:1px solid #fff;"></div>
+            <div class="radar" style="width:240px;height:240px;animation-direction:reverse;animation-duration:40s;border-bottom:1px solid rgba(255,255,255,.4);"></div>
+            <div class="radar" style="width:330px;height:330px;animation-duration:55s;border-left:1px solid rgba(255,255,255,.15);"></div>
+            <div class="sweep"></div>
+            <img class="core-logo" src="「ARCH」 Symbol Logo White Ver.png" alt="ARCH CORE">
+            <div class="status" id="status">SYSTEM_STANDBY</div>
+            <div class="percent" id="percent">--%</div>
+            <div class="rank" id="rank">RANK --</div>
+            <div class="reaction" id="reaction"></div>
+            <div class="imprint-badge" id="imprint-badge">🔗 각인 발현 임박</div>
         </div>
 
-        <div class="subject-info" id="info2">
-            <div class="photo-frame" id="frame2"></div>
-            <div class="text-display" id="outName2">SUBJECT_B</div>
-            <div class="attr-display" id="outAttr2">무속성 (None)</div>
+        <!-- SUBJECT B -->
+        <div class="subject" id="info2">
+            <div class="frame" id="frame2">
+                <span class="zoom-tag" id="zoomtag2">x1.0</span>
+                <div class="placeholder"><img class="ph-logo" src="「ARCH」 Symbol Logo White Ver.png" alt="">NO SIGNAL<br>SUBJECT_B</div>
+                <img id="img2" alt="">
+                <div class="zoom-ui">
+                    <button onclick="zoomBtn(2,-1)">−</button>
+                    <button onclick="zoomBtn(2,0)">⟲</button>
+                    <button onclick="zoomBtn(2,1)">+</button>
+                </div>
+            </div>
+            <div class="name-out" id="name2">SUBJECT_B</div>
+            <div class="attr-out" id="attr2"><span class="dot"></span>무속성 (None)</div>
         </div>
+    </div>
+
+    <!-- VERDICT -->
+    <div class="verdict">
+        <div class="cell"><span class="lbl">평가 등급 / GRADE</span><span class="val" id="v-grade">--</span></div>
+        <div class="cell"><span class="lbl">각인 가능성 / IMPRINT</span><span class="val" id="v-imprint">--</span></div>
+        <div class="cell"><span class="lbl">중독 위험도 / ADDICT</span><span class="val" id="v-addict">--</span></div>
+        <div class="cell"><span class="lbl">속성 상성 / REACTION</span><span class="val" id="v-react">--</span></div>
     </div>
 </div>
 
-<div class="input-ui" id="input-area">
-    <div class="ui-group">
-        <input type="file" id="file1" style="width: 160px;">
-        <input type="text" id="nameInput1" placeholder="NAME A" oninput="syncName(1)">
-        <select id="attrInput1" onchange="updateTheme(1)">
-            <option value="none">무속성 (None)</option>
-            <option value="pyre">🔥 불 (Pyre)</option>
-            <option value="aqua">💧 물 (Aqua)</option>
-            <option value="verde">🌿 풀 (Verde)</option>
-            <option value="fulmen">⚡ 번개 (Fulmen)</option>
-            <option value="aero">💨 바람 (Aero)</option>
-            <option value="glacies">❄️ 얼음 (Glacies)</option>
-        </select>
+<!-- ============ CONSOLE ============ -->
+<div class="console">
+    <div>
+        <h3>// OPERATOR_INPUT</h3>
+        <div class="field">
+            <label>SUBJECT_A · IMAGE</label>
+            <input type="file" id="file1" accept="image/*">
+        </div>
+        <div class="field">
+            <label>SUBJECT_A · NAME</label>
+            <input type="text" id="nameInput1" placeholder="이름 A 입력" oninput="syncName(1)">
+        </div>
+        <div class="field">
+            <label>SUBJECT_A · ATTRIBUTE</label>
+            <select id="attr-sel1" onchange="updateTheme(1)"></select>
+        </div>
+        <div style="height:14px"></div>
+        <div class="field">
+            <label>SUBJECT_B · IMAGE</label>
+            <input type="file" id="file2" accept="image/*">
+        </div>
+        <div class="field">
+            <label>SUBJECT_B · NAME</label>
+            <input type="text" id="nameInput2" placeholder="이름 B 입력" oninput="syncName(2)">
+        </div>
+        <div class="field">
+            <label>SUBJECT_B · ATTRIBUTE</label>
+            <select id="attr-sel2" onchange="updateTheme(2)"></select>
+        </div>
+        <p style="font-size:10px;color:var(--dim);font-family:monospace;line-height:1.6;margin:6px 0 0;">
+            * 사진 위에서 휠 = 확대/축소, 드래그 = 위치 이동.
+        </p>
     </div>
-    <div class="ui-group" style="border-left: 1px solid #444; padding-left: 20px;">
-        <input type="file" id="file2" style="width: 160px;">
-        <input type="text" id="nameInput2" placeholder="NAME B" oninput="syncName(2)">
-        <select id="attrInput2" onchange="updateTheme(2)">
-            <option value="none">무속성 (None)</option>
-            <option value="pyre">🔥 불 (Pyre)</option>
-            <option value="aqua">💧 물 (Aqua)</option>
-            <option value="verde">🌿 풀 (Verde)</option>
-            <option value="fulmen">⚡ 번개 (Fulmen)</option>
-            <option value="aero">💨 바람 (Aero)</option>
-            <option value="glacies">❄️ 얼음 (Glacies)</option>
-        </select>
+
+    <div>
+        <h3>// ANALYSIS_CORE</h3>
+        <div class="mode-tabs">
+            <div class="mode-tab active" data-mode="fate" onclick="switchMode('fate')">▶ 운명 측정 (FATE)</div>
+            <div class="mode-tab" data-mode="chaos" onclick="switchMode('chaos')">▶ 혼돈 측정 (CHAOS)</div>
+        </div>
+        <div class="btn-row">
+            <button class="btn" onclick="analyze()">ANALYZE_SYNC</button>
+            <button class="btn" onclick="diagnose()">진단서 출력</button>
+        </div>
+        <div class="btn-row">
+            <button class="btn" onclick="saveImage()">SAVE_DATA</button>
+            <button class="btn" onclick="shareResult()">SHARE</button>
+            <button class="btn danger" onclick="clearErrors()">CLEAR_ALERTS</button>
+        </div>
+        <div id="terminal">&gt;&gt; SYSTEM_STANDBY. AWAITING_OPERATOR_COMMAND...</div>
+        <div id="log"></div>
     </div>
 </div>
 
-<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 <script>
-    document.addEventListener('mousemove', (e) => {
-        const cursor = document.getElementById('cursor');
-        cursor.style.left = e.clientX + 'px';
-        cursor.style.top = e.clientY + 'px';
+/* ===== ATTRIBUTE META ===== */
+const ATTR={
+    none:   {label:'무속성 (None)',   emoji:'',   color:'#ffffff'},
+    pyre:   {label:'불 (Pyre)',       emoji:'🔥', color:'#ff5a2c'},
+    aqua:   {label:'물 (Aqua)',       emoji:'💧', color:'#3aa0ff'},
+    verde:  {label:'풀 (Verde)',      emoji:'🌿', color:'#33e06b'},
+    fulmen: {label:'번개 (Fulmen)',   emoji:'⚡', color:'#f5e642'},
+    aero:   {label:'바람 (Aero)',     emoji:'💨', color:'#5ff0d4'},
+    glacies:{label:'얼음 (Glacies)',  emoji:'❄️', color:'#a9e8ff'}
+};
+const STATE={1:{attr:'none'},2:{attr:'none'}};
+let MODE='fate';
+
+/* populate selects */
+['attr-sel1','attr-sel2'].forEach(id=>{
+    const s=document.getElementById(id);
+    for(const k in ATTR){
+        const o=document.createElement('option');
+        o.value=k;o.textContent=(ATTR[k].emoji?ATTR[k].emoji+' ':'')+ATTR[k].label;
+        s.appendChild(o);
+    }
+});
+
+/* ===== CURSOR ===== */
+const cursor=document.getElementById('cursor');
+addEventListener('mousemove',e=>{cursor.style.left=e.clientX+'px';cursor.style.top=e.clientY+'px';});
+addEventListener('mousedown',()=>cursor.classList.add('click-anim'));
+addEventListener('mouseup',()=>cursor.classList.remove('click-anim'));
+
+/* ===== BOOT ===== */
+window.onload=()=>{setTimeout(()=>{document.getElementById('boot-screen').style.display='none';notify('SYNC_DATABASE_LOADED');},1700);};
+
+function notify(msg){
+    const n=document.getElementById('system-notif');
+    n.innerText='>> '+msg;n.style.display='block';n.style.animation='none';void n.offsetWidth;
+    n.style.animation='slideIn .3s forwards';
+    clearTimeout(n._t);n._t=setTimeout(()=>n.style.display='none',3200);
+}
+
+/* ===== NAME / THEME ===== */
+function syncName(id){
+    const v=document.getElementById('nameInput'+id).value.trim();
+    document.getElementById('name'+id).innerText=v||('SUBJECT_'+(id===1?'A':'B'));
+}
+function updateTheme(id){
+    const k=document.getElementById('attr-sel'+id).value;
+    STATE[id].attr=k;
+    document.documentElement.style.setProperty('--c'+id,ATTR[k].color);
+    const out=document.getElementById('attr'+id);
+    out.innerHTML='<span class="dot"></span>'+(ATTR[k].emoji?ATTR[k].emoji+' ':'')+ATTR[k].label;
+}
+
+/* ===== IMAGE ZOOM / PAN ===== */
+const Z={1:{s:1,x:0,y:0,loaded:false},2:{s:1,x:0,y:0,loaded:false}};
+function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
+
+function applyTransform(id){
+    const img=document.getElementById('img'+id);
+    const frame=document.getElementById('frame'+id);
+    const z=Z[id];const w=frame.clientWidth,h=frame.clientHeight;
+    z.s=clamp(z.s,1,6);
+    z.x=clamp(z.x,w*(1-z.s),0);
+    z.y=clamp(z.y,h*(1-z.s),0);
+    img.style.transform=`translate(${z.x}px,${z.y}px) scale(${z.s})`;
+    document.getElementById('zoomtag'+id).innerText='x'+z.s.toFixed(1);
+}
+function loadImg(id,file){
+    const url=URL.createObjectURL(file);
+    const img=document.getElementById('img'+id);
+    img.onload=()=>{img.style.display='block';Z[id]={s:1,x:0,y:0,loaded:true};applyTransform(id);
+        document.querySelector('#frame'+id+' .placeholder').style.display='none';};
+    img.src=url;
+}
+function zoomBtn(id,dir){
+    const z=Z[id];if(!z.loaded&&dir!==0)return;
+    if(dir===0){Z[id]={...z,s:1,x:0,y:0};}else{z.s+=dir*0.3;}
+    applyTransform(id);
+}
+function setupFrame(id){
+    const frame=document.getElementById('frame'+id);
+    frame.addEventListener('wheel',e=>{
+        if(!Z[id].loaded)return;e.preventDefault();
+        const r=frame.getBoundingClientRect();
+        const px=e.clientX-r.left,py=e.clientY-r.top;
+        const z=Z[id];const old=z.s;
+        const ns=clamp(old*(e.deltaY<0?1.12:0.89),1,6);
+        z.x=px-(px-z.x)*(ns/old);
+        z.y=py-(py-z.y)*(ns/old);
+        z.s=ns;applyTransform(id);
+    },{passive:false});
+    let drag=false,lx=0,ly=0;
+    frame.addEventListener('pointerdown',e=>{
+        if(!Z[id].loaded||e.target.tagName==='BUTTON')return;
+        drag=true;lx=e.clientX;ly=e.clientY;frame.setPointerCapture(e.pointerId);
     });
+    frame.addEventListener('pointermove',e=>{
+        if(!drag)return;
+        Z[id].x+=e.clientX-lx;Z[id].y+=e.clientY-ly;lx=e.clientX;ly=e.clientY;applyTransform(id);
+    });
+    frame.addEventListener('pointerup',()=>drag=false);
+    frame.addEventListener('pointercancel',()=>drag=false);
+}
+setupFrame(1);setupFrame(2);
+document.getElementById('file1').onchange=e=>{if(e.target.files[0])loadImg(1,e.target.files[0]);};
+document.getElementById('file2').onchange=e=>{if(e.target.files[0])loadImg(2,e.target.files[0]);};
 
-    // ⭐ 파일 선택 시 배경 이미지로 적용하도록 변경
-    file1.onchange = e => { 
-        if(e.target.files[0]) { 
-            const url = URL.createObjectURL(e.target.files[0]);
-            document.getElementById('frame1').style.backgroundImage = `url(${url})`;
-        } 
+/* ===== COMPATIBILITY ENGINE ===== */
+function hash(str){let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function pairKey(a,b){return [a,b].sort().join('-');}
+
+const COMPAT={
+    'aqua-pyre':   {mod:-16,txt:'💥 증기 폭발 — 파장 충돌'},
+    'glacies-pyre':{mod:-13,txt:'🌫️ 급격한 온도차 — 균열 발생'},
+    'pyre-verde':  {mod:-9, txt:'🔥 연소 — 풀 속성 잠식'},
+    'aero-pyre':   {mod: 12,txt:'🌪️ 화염 확산 — 공격 시너지'},
+    'aqua-verde':  {mod: 12,txt:'🌱 생장 촉진 — 안정적 공명'},
+    'aqua-fulmen': {mod: 7, txt:'⚡ 전도 증폭 — 고위험 고출력'},
+    'aqua-glacies':{mod: 9, txt:'🧊 동결 연계 — 광역 장악'},
+    'aero-fulmen': {mod: 10,txt:'⚡ 속도 가속 — 섬멸 특화'},
+    'fulmen-glacies':{mod:-6,txt:'❄️ 전도 저하 — 출력 불안정'},
+    'aero-glacies':{mod: 6, txt:'🌬️ 한기 확산 — 제압 연계'},
+    'aero-verde':  {mod: 5, txt:'🍃 포자 확산 — 영역 제어'},
+    'fulmen-pyre': {mod: 4, txt:'🔥 과부하 — 폭발적 화력'},
+    'fulmen-verde':{mod:-4, txt:'🌿 신경 교란 — 미세 불안정'},
+    'glacies-verde':{mod:-5,txt:'🥶 생장 둔화 — 효율 저하'},
+    'aero-aqua':   {mod: 3, txt:'🌊 기류 순환 — 무난한 연계'}
+};
+function compat(a,b){
+    if(a===b){
+        if(a==='none')return{mod:10,txt:'🤍 무속성 공명 — 가장 순수한 동기화'};
+        return{mod:13,txt:(ATTR[a].emoji||'')+' 동일 속성 공명 — 파장 일치'};
     }
-    file2.onchange = e => { 
-        if(e.target.files[0]) { 
-            const url = URL.createObjectURL(e.target.files[0]);
-            document.getElementById('frame2').style.backgroundImage = `url(${url})`;
-        } 
+    if(a==='none'||b==='none')return{mod:6,txt:'🤍 순수 파장 — 정신 정화 / 안정화'};
+    return COMPAT[pairKey(a,b)]||{mod:0,txt:'⚪ 표준 간섭 — 특이사항 없음'};
+}
+
+function getStatus(p){
+    if(p>=95)return'완전 동기화 (PERFECT SYNC)';
+    if(p>=81)return'공명 상태 (RESONANCE)';
+    if(p>=61)return'안정 연계 (STABLE LINK)';
+    if(p>=41)return'불안정 결합 (UNSTABLE)';
+    return'붕괴 위험 (CRITICAL)';
+}
+function getGrade(p){
+    if(p<50)return'F / 배정 불가';
+    if(p<71)return'C / 표준 조합';
+    if(p<91)return'B-A / 엘리트 조합';
+    return'S / 전설적 조합';
+}
+function getRank(p){return p>=98?'SSS':p>=91?'S':p>=76?'A':p>=51?'B':'C';}
+function getImprint(p){return p>=91?'발현 임박':p>=81?'조짐 감지':p>=65?'낮음':'미확인';}
+
+const RECS=[
+    "정기 가이딩 주 3회 이상, 라운지 우선 사용권 부여.",
+    "고압 임무 투입 가능. 단, 임무 후 24시간 안정화 의무.",
+    "공명연구실 정기 측정 일정 편성. 데이터 누적 관찰 요망.",
+    "감정 파장 모니터링 필수. 별거 시 즉시 보고 의무.",
+    "심층 가이딩 세션 권장. 트라우마 발현 시 하모니 즉시 개입.",
+    "장기 동행 임무 가능. 파장 충돌 발생 시 격리 후 재조정.",
+    "분리 임무 금지 권고. 동선 일치율 90% 이상 유지 요망."
+];
+
+/* compute deterministic-or-random result */
+function compute(){
+    const nA=document.getElementById('nameInput1').value.trim()||'미상_A';
+    const nB=document.getElementById('nameInput2').value.trim()||'미상_B';
+    const aA=STATE[1].attr,aB=STATE[2].attr;
+    const c=compat(aA,aB);
+    let sync,addict,rec,diagNo;
+    if(MODE==='chaos'){
+        sync=Math.floor(Math.random()*101);
+        addict=Math.floor(Math.random()*85+15);
+        rec=RECS[Math.floor(Math.random()*RECS.length)];
+        diagNo=Math.random().toString(36).substr(2,8).toUpperCase();
+    }else{
+        const h=hash(nA+'::'+nB)^hash(nB+'::'+nA);
+        const base=50+(h%38);                 // 50..87
+        sync=clamp(base+c.mod,3,100);
+        addict=(hash(nA+nB)%80)+15;
+        rec=RECS[hash(nA+aA+nB+aB)%RECS.length];
+        diagNo=(h>>>0).toString(36).substr(0,8).toUpperCase().padStart(8,'0');
     }
+    return {nA,nB,aA,aB,sync,addict,rec,diagNo,reaction:c.txt,
+        grade:getGrade(sync),imprint:getImprint(sync),rank:getRank(sync),status:getStatus(sync)};
+}
 
-    function syncName(id) {
-        const val = document.getElementById('nameInput' + id).value;
-        document.getElementById('outName' + id).innerText = val || 'SUBJECT_' + (id===1?'A':'B');
-    }
+/* ===== ANALYZE ===== */
+let LAST=null;
+function analyze(){
+    const core=document.getElementById('core');
+    core.classList.remove('show');
+    const r=compute();LAST=r;
 
-    function updateTheme(id) {
-        const select = document.getElementById('attrInput' + id);
-        const attrColors = { pyre: '#ff4d00', aqua: '#0088ff', verde: '#00ff66', fulmen: '#f2ff00', aero: '#00ffcc', glacies: '#a0e9ff', none: '#ffffff' };
-        document.documentElement.style.setProperty('--theme-color' + id, attrColors[select.value]);
-        document.getElementById('outAttr' + id).innerText = select.options[select.selectedIndex].text;
-    }
+    setTimeout(()=>{
+        document.getElementById('diag-no').innerText=(MODE==='chaos'?'CHAOS-':'HD-')+r.diagNo;
+        const pEl=document.getElementById('percent');
+        pEl.innerText=r.sync+'%';pEl.classList.remove('glitch');pEl.style.color='#fff';
+        document.getElementById('status').innerText=r.status;
+        document.getElementById('rank').innerText='RANK '+r.rank;
+        document.getElementById('reaction').innerText=r.reaction;
+        // verdict
+        document.getElementById('v-grade').innerText=r.grade;
+        document.getElementById('v-imprint').innerText=r.imprint;
+        document.getElementById('v-addict').innerText=r.addict+'% '+(r.addict>70?'⚠️':'');
+        document.getElementById('v-react').innerText=r.reaction.replace(/^[^\s]+\s/,'').split(' — ')[0];
 
-    const attrGlow = {
-        pyre: "0 0 25px #ff4d00", aqua: "0 0 25px #00aaff", verde: "0 0 25px #00ff66",
-        fulmen: "0 0 25px #ffff00", aero: "0 0 25px #00ffcc", glacies: "0 0 25px #a0e9ff"
-    };
+        // imprint visuals
+        const ib=document.getElementById('imprint-badge');
+        const i1=document.getElementById('info1'),i2=document.getElementById('info2');
+        if(r.sync>=91){ib.style.display='inline-block';i1.classList.add('imprint');i2.classList.add('imprint');}
+        else{ib.style.display='none';i1.classList.remove('imprint');i2.classList.remove('imprint');}
 
-    function applyGlow(){
-        const a1 = attrInput1.value;
-        const a2 = attrInput2.value;
-        percent.style.textShadow = attrGlow[a1] || "0 0 40px white";
-        rank.style.boxShadow = attrGlow[a2] || "0 0 20px white";
-    }
-
-    function randomUI(){
-        document.querySelectorAll(".subject-info").forEach(el=>{
-            el.style.borderWidth = Math.random() > 0.5 ? "2px" : "1px";
-        });
-    }
-
-    function getType(p){
-        if(p > 95) return "완전 동기화 (Perfect Sync)";
-        if(p > 80) return "공명 상태 (Resonance)";
-        if(p > 60) return "안정 연계 (Stable Link)";
-        if(p > 40) return "불안정 결합 (Unstable)";
-        return "붕괴 위험 (Critical)";
-    }
-
-    function calcSync(){
-        const core = document.getElementById('core-anim');
-        core.classList.remove('show');
-        const p = Math.floor(Math.random()*101);
-        
-        setTimeout(() => {
-            percent.innerText = p + "%";
-            percent.style.color = "white";
-            percent.classList.remove('glitch');
-            document.getElementById('sync-status').innerText = getType(p);
-            if(p < 30){
-                percent.style.color = "red";
-                percent.classList.add('glitch');
-                for(let i=0; i<5; i++){ setTimeout(()=> spawnError(), i*200); }
-            }
-            let r = p > 98 ? "SSS" : p > 90 ? "S" : p > 75 ? "A" : p > 50 ? "B" : "C";
-            rank.innerText = "RANK " + r;
-            applyGlow();
-            randomUI();
-            core.classList.add('show');
-        }, 100);
-    }
-
-    async function shareResult() {
-        if (navigator.share) {
-            try { await navigator.share({ title: 'ARCH SYNC REPORT', text: `싱크율 ${percent.innerText} 달성!`, url: window.location.href }); } 
-            catch (err) { console.log('Share failed'); }
-        } else {
-            alert('링크가 복사되었습니다.');
-            navigator.clipboard.writeText(window.location.href);
+        // critical glitch + alerts
+        if(r.sync<30){
+            pEl.classList.add('glitch');
+            for(let i=0;i<5;i++)setTimeout(spawnError,i*180);
         }
-    }
+        core.classList.add('show');
+        addLog(r);
+        notify('SYNC_ANALYSIS_COMPLETE');
+    },120);
+}
 
-    function spawnError() {
-        const container = document.getElementById('error-container');
-        const popup = document.createElement('div');
-        popup.className = 'error-popup';
-        popup.style.top = Math.random() * 600 + "px";
-        popup.style.left = Math.random() * 900 + "px";
-        popup.innerHTML = `
-            <div class="err-head"><span>SYSTEM_ALERT</span><span onclick="this.parentElement.parentElement.remove()" style="cursor:pointer">×</span></div>
-            <div style="padding:15px;"><strong>FATAL_ERROR</strong><br>SYNC_VITAL_LOW</div>
-        `;
-        container.appendChild(popup);
-    }
+function addLog(r){
+    const log=document.getElementById('log');
+    const line=document.createElement('div');
+    line.innerHTML=`> ${r.nA} × ${r.nB} :: <b>${r.sync}%</b> [${r.rank}]`;
+    log.prepend(line);
+    while(log.children.length>6)log.removeChild(log.lastChild);
+}
 
-    function clearErrors() { 
-        document.getElementById('error-container').innerHTML = ''; 
-        percent.classList.remove('glitch');
-    }
+/* ===== DIAGNOSIS TERMINAL ===== */
+let typeT=null;
+function typewrite(text){
+    const t=document.getElementById('terminal');t.innerText='';
+    if(typeT)clearInterval(typeT);let i=0;
+    typeT=setInterval(()=>{
+        t.innerText+=text[i++];t.scrollTop=t.scrollHeight;
+        if(i>=text.length){clearInterval(typeT);typeT=null;
+            t.innerText+='\n\n>> END_OF_DOCUMENT. MAY THE ARCH PROTECT YOU.';}
+    },12);
+}
+function diagnose(){
+    if(!LAST)analyze();
+    const r=LAST||compute();
+    let d='=================================\n';
+    d+='[ HARMONY DIVISION: PAIRING DIAGNOSTIC ]\n';
+    d+=`DIAGNOSTIC_NO: ${MODE==='chaos'?'CHAOS-':'HD-'}${r.diagNo}\n`;
+    d+='=================================\n\n';
+    d+='▶ 진단 대상\n';
+    d+=`- SUBJECT_A: ${r.nA} [${ATTR[r.aA].label}]\n`;
+    d+=`- SUBJECT_B: ${r.nB} [${ATTR[r.aB].label}]\n\n`;
+    d+='▶ 측정 결과\n';
+    d+=`- 싱크로율: ${r.sync}%\n`;
+    d+=`- 평가 등급: ${r.grade}\n`;
+    d+=`- 각인 가능성: ${r.imprint}\n`;
+    d+=`- 가이딩 중독 위험도: ${r.addict}% [${r.addict>70?'고위험 / 격리 필요':r.addict>45?'주의 / 모니터링':'안정 범주'}]\n`;
+    d+=`- 속성 상성: ${r.reaction}\n\n`;
+    let note;
+    if(r.sync<50)note='정신 파장 불일치. 페어링 시 양측 모두 위험. 즉시 재배정 권장.';
+    else if(r.sync<71)note='기본 임무 수행 가능 수준. 단기 페어링에 한해 운용.';
+    else if(r.sync<91)note='고난도 임무 투입 승인. 장기 페어링 시 시너지 극대화 예상.';
+    else note='전설적 수치 감지. 각인 발현이 임박하며, 강제 분리 시 양측 정신 붕괴 위험.';
+    d+=`▶ 등급 해석\n${note}\n\n`;
+    d+=`▶ 하모니 권고사항\n${r.rec}`;
+    typewrite(d);
+    notify('PAIRING_DIAGNOSTIC_COMPLETE');
+}
 
-    // ⭐ 캡처 옵션 반영: useCORS, allowTaint 추가
-    async function saveImage(){
-        const inputArea = document.getElementById('input-area');
-        inputArea.style.display = "none";
-        const target = document.getElementById("capture");
+/* ===== ERROR POPUPS ===== */
+function spawnError(){
+    const c=document.getElementById('error-container');
+    const p=document.createElement('div');p.className='error-popup';
+    p.style.top=Math.random()*420+'px';p.style.left=Math.random()*820+'px';
+    p.innerHTML=`<div class="err-head"><span>SYSTEM_ALERT</span><span onclick="this.closest('.error-popup').remove()" style="cursor:none">×</span></div>
+        <div style="padding:13px;"><strong>FATAL_ERROR</strong><br>SYNC_VITAL_LOW // 파장 붕괴 경고</div>`;
+    c.appendChild(p);
+}
+function clearErrors(){
+    document.getElementById('error-container').innerHTML='';
+    document.getElementById('percent').classList.remove('glitch');
+    notify('ALERTS_CLEARED');
+}
 
-        const rawCanvas = await html2canvas(target, {
-            backgroundColor: "#000",
-            scale: 2,
-            useCORS: true,      // ⭐ CORS 허용
-            allowTaint: true,   // ⭐ Taint 허용
-            logging: false,
-            width: 1200, height: 800, windowWidth: 1200, windowHeight: 800, x: 0, y: 0
-        });
+/* ===== MODE ===== */
+function switchMode(m){
+    MODE=m;
+    document.querySelectorAll('.mode-tab').forEach(t=>t.classList.toggle('active',t.dataset.mode===m));
+    notify('MODE: '+(m==='fate'?'FATE_DETERMINISTIC':'CHAOS_RANDOM'));
+}
 
-        const finalCanvas = document.createElement("canvas");
-        finalCanvas.width = 1200 * 2; finalCanvas.height = 800 * 2;
-        const ctx = finalCanvas.getContext("2d");
-        ctx.drawImage(rawCanvas, 0, 0, rawCanvas.width, rawCanvas.height, 0, 0, finalCanvas.width, finalCanvas.height);
+/* ===== SAVE ===== */
+async function saveImage(){
+    notify('RENDERING_REPORT...');
+    const t=document.getElementById('capture');
+    const canvas=await html2canvas(t,{backgroundColor:'#000',scale:2,useCORS:true,allowTaint:true,logging:false});
+    const link=document.createElement('a');
+    link.download='ARCH_SYNC_'+(LAST?LAST.diagNo:'REPORT')+'.png';
+    link.href=canvas.toDataURL('image/png');link.click();
+}
 
-        const link = document.createElement("a");
-        link.download = "ARCH_SYNC_FINAL.png";
-        link.href = finalCanvas.toDataURL("image/png");
-        link.click();
+/* ===== SHARE ===== */
+async function shareResult(){
+    const txt=LAST?`싱크율 ${LAST.sync}% / ${LAST.grade}`:'ARCH SYNC REPORT';
+    if(navigator.share){try{await navigator.share({title:'ARCH SYNC REPORT',text:txt,url:location.href});}catch(e){}}
+    else{try{await navigator.clipboard.writeText(location.href);notify('LINK_COPIED');}catch(e){notify('COPY_FAILED');}}
+}
 
-        inputArea.style.display = "flex";
-    }
+/* ===== CLOCK + AMBIENT ===== */
+setInterval(()=>{document.getElementById('clock').innerText=new Date().toLocaleTimeString('en-GB');},1000);
+const sysLogs=['NEURAL_LINK_STABLE','SCANNING_WAVE_FREQUENCY...','HARMONY_DATA_SYNCED','MINOR_FLUCTUATION_DETECTED'];
+setInterval(()=>{
+    const t=document.getElementById('terminal');
+    if(!t.innerText.includes('END_OF_DOCUMENT'))return;
+    if(Math.random()<0.4){t.innerText+='\n>> '+sysLogs[Math.floor(Math.random()*sysLogs.length)];t.scrollTop=t.scrollHeight;}
+},5000);
 </script>
 </body>
 </html>
