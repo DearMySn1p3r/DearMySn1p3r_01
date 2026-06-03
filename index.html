@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ARCH SYNC INTERFACE</title>
+<title>ARCH_SYNC_INTERFACE_v7.0_BW</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+KR:wght@100;300;500;700&display=swap');
@@ -125,7 +125,8 @@ body{
 .percent{font-size:108px;font-weight:900;line-height:1;font-style:italic;text-shadow:0 0 40px #fff;margin:6px 0;z-index:2;transition:.3s;}
 .rank{font-size:22px;border:1px solid #fff;padding:7px 34px;box-shadow:0 0 18px #fff;background:rgba(0,0,0,.5);z-index:2;letter-spacing:2px;}
 .reaction{margin-top:14px;font-size:12px;font-family:'Noto Sans KR';color:var(--dim);letter-spacing:.5px;z-index:2;min-height:16px;}
-.imprint-badge{margin-top:10px;font-size:11px;font-weight:900;letter-spacing:2px;color:#000;background:#fff;padding:5px 16px;z-index:2;display:none;box-shadow:0 0 18px #fff;animation:textGlitch .25s infinite;}
+.imprint-badge{margin-top:10px;font-size:11px;font-weight:900;letter-spacing:2px;line-height:1;color:#000;background:#fff;padding:7px 16px;z-index:2;display:none;align-items:center;justify-content:center;box-shadow:0 0 18px #fff;animation:textGlitch .25s infinite;}
+.capturing *{animation:none !important;}
 
 .glitch{color:#fff !important;animation:hardGlitch .18s infinite;}
 @keyframes hardGlitch{0%{transform:translate(0)}25%{transform:translate(-3px,2px)}50%{transform:translate(3px,-2px)}75%{transform:translate(-2px,-1px)}100%{transform:translate(0)}}
@@ -529,7 +530,7 @@ function analyze(){
         // imprint visuals
         const ib=document.getElementById('imprint-badge');
         const i1=document.getElementById('info1'),i2=document.getElementById('info2');
-        if(r.sync>=91){ib.style.display='inline-block';i1.classList.add('imprint');i2.classList.add('imprint');}
+        if(r.sync>=91){ib.style.display='inline-flex';i1.classList.add('imprint');i2.classList.add('imprint');}
         else{ib.style.display='none';i1.classList.remove('imprint');i2.classList.remove('imprint');}
 
         // critical glitch + alerts
@@ -608,10 +609,16 @@ function clearErrors(){
 async function saveImage(){
     notify('RENDERING_REPORT...');
     const t=document.getElementById('capture');
-    const canvas=await html2canvas(t,{backgroundColor:'#000',scale:2,useCORS:true,allowTaint:true,logging:false});
-    const link=document.createElement('a');
-    link.download='ARCH_SYNC_'+(LAST?LAST.diagNo:'REPORT')+'.png';
-    link.href=canvas.toDataURL('image/png');link.click();
+    t.classList.add('capturing');                 // 캡처 중 애니메이션 정지 (글리치 밀림 방지)
+    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+    try{
+        const canvas=await html2canvas(t,{backgroundColor:'#000',scale:2,useCORS:true,allowTaint:true,logging:false});
+        const link=document.createElement('a');
+        link.download='ARCH_SYNC_'+(LAST?LAST.diagNo:'REPORT')+'.png';
+        link.href=canvas.toDataURL('image/png');link.click();
+    }finally{
+        t.classList.remove('capturing');
+    }
 }
 
 /* ===== SHARE ===== */
