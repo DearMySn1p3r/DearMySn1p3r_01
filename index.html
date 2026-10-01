@@ -204,9 +204,10 @@ body.ready #side{transition:opacity .9s var(--ease) .25s,transform .9s var(--eas
 
 
 /* ===== SYNC REPORT ===== */
-#v-sync{overflow-y:auto;padding:150px 32px 120px;flex-direction:column;justify-content:flex-start}
-#stage::after{content:'';position:absolute;left:0;right:0;bottom:0;height:110px;background:linear-gradient(180deg,rgba(0,0,0,0),#000 75%);pointer-events:none;z-index:2}
+#v-sync{top:132px;bottom:92px;overflow-y:auto;padding:12px 32px 40px;-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 14px,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(180deg,transparent 0,#000 14px,#000 calc(100% - 36px),transparent);flex-direction:column;justify-content:flex-start}
 #stage .frame{z-index:4}
+#stage .st-bot{z-index:5}
+#stage .st-top{z-index:5}
 #v-sync>*{flex-shrink:0}
 #report{--c1:#ffffff;--c2:#ffffff;position:relative;width:100%;max-width:980px;margin:auto 0;background:#030303;border:1px solid var(--hl2);padding:30px 32px 26px;overflow:hidden}
 #report::before{content:'';position:absolute;left:0;right:0;top:0;height:2px;background:linear-gradient(90deg,var(--c1),var(--c2))}
@@ -274,6 +275,10 @@ body.ready #side{transition:opacity .9s var(--ease) .25s,transform .9s var(--eas
 .al-b{padding:12px;font-size:12px;line-height:1.6;color:var(--t2)}
 .al-b b{display:block;font:500 9.5px var(--mono);letter-spacing:.16em;color:#fff;margin-bottom:5px}
 @keyframes alIn{from{opacity:0;transform:scale(.94)}}
+.al.fade{opacity:0;transform:translateY(-6px);transition:opacity 1.6s ease,transform 1.6s ease}
+.ph:not(.on){cursor:pointer}
+.ph:not(.on):hover{border-color:rgba(255,255,255,.4)}
+.ph-empty small{font-size:10.5px;color:var(--t4);margin-top:-4px}
 /* side extras */
 .up{position:relative;display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px dashed var(--hl2);transition:border-color .2s;margin-bottom:14px}
 .up:hover,.up.over{border-color:#fff}
@@ -323,7 +328,7 @@ body.ready #side{transition:opacity .9s var(--ease) .25s,transform .9s var(--eas
 #mnav{display:none}
 @media (hover:none),(pointer:coarse){*{cursor:auto!important}#cursor,#cur-dot{display:none!important}.zui{opacity:1}}
 @media (max-width:1320px){.st-r{display:none}}
-@media (max-width:1180px){.status .st:nth-child(n+3){display:none}#main{grid-template-columns:1fr 330px}.rh-r .hide-m{display:none}#v-sync{padding:140px 22px 110px}}
+@media (max-width:1180px){.status .st:nth-child(n+3){display:none}#main{grid-template-columns:1fr 330px}.rh-r .hide-m{display:none}#v-sync{top:124px;bottom:88px;padding:10px 22px 40px}}
 @media (max-width:1060px){.r-grid{gap:12px}#report{padding:24px 20px 20px}#pct{font-size:62px}#pct small{font-size:18px}.s-name{font-size:17px}.s-attr{font-size:11.5px}.core{min-height:250px}.r-ver{grid-template-columns:1fr 1fr}.r-ver>div:nth-child(2){border-right:0}.r-ver>div:nth-child(-n+2){border-bottom:1px solid var(--hl)}.r-met{grid-template-columns:1fr}}
 @media (max-width:900px){.r-grid{grid-template-columns:1fr 1fr}.core{grid-column:1/-1;order:3;min-height:260px}}
 @media (max-width:900px){
@@ -339,9 +344,9 @@ body.ready #side{transition:opacity .9s var(--ease) .25s,transform .9s var(--eas
   #bg,.frame{display:none}
   .st-top{position:relative;left:auto;right:auto;top:auto;padding:22px 20px 0}
   .view{position:relative;inset:auto}
-  #v-sync{padding:20px 14px 22px;overflow:visible}
+  #v-sync{top:auto;bottom:auto;padding:20px 14px 22px;overflow:visible;-webkit-mask-image:none;mask-image:none}
+  .ztag{display:none}
   .st-bot{display:none}
-  #stage::after{display:none}
   #report{padding:20px 16px 18px}
   .r-head{flex-direction:column;align-items:flex-start;gap:14px}
   .rh-r{text-align:left}
@@ -423,10 +428,10 @@ body.ready #side{transition:opacity .9s var(--ease) .25s,transform .9s var(--eas
         <div class="r-grid">
         <div class="subj" id="sA">
           <div class="ph" id="phA"><canvas id="pcA" width="600" height="600"></canvas>
-            <div class="ph-empty"><img src="「ARCH」 Symbol Logo White Ver.png" alt="" onerror="this.remove()"><span class="lbl">No Signal</span></div>
+            <div class="ph-empty"><img src="「ARCH」 Symbol Logo White Ver.png" alt="" onerror="this.remove()"><span class="lbl">No Signal</span><small class="nocap">눌러서 사진 넣기</small></div>
             <i class="bk a"></i><i class="bk b"></i><i class="bk c"></i><i class="bk d"></i>
             <span class="ztag nocap" id="ztA">x1.0</span>
-            <div class="zui nocap"><button data-z="-1">−</button><button data-z="0">↺</button><button data-z="1">+</button></div>
+            <div class="zui nocap"><button data-z="up" title="사진 바꾸기"><svg viewBox="0 0 12 12" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M6 8.5V2M3.5 4.5L6 2l2.5 2.5M2 10h8"/></svg></button><button data-z="-1">−</button><button data-z="0">↺</button><button data-z="1">+</button></div>
           </div>
           <div class="s-meta"><span class="lbl">Subject A</span><span class="s-role" id="roleA">SENTINEL</span></div>
           <div class="s-name" id="nameA">미상</div>
@@ -442,10 +447,10 @@ body.ready #side{transition:opacity .9s var(--ease) .25s,transform .9s var(--eas
         </div>
         <div class="subj" id="sB">
           <div class="ph" id="phB"><canvas id="pcB" width="600" height="600"></canvas>
-            <div class="ph-empty"><img src="「ARCH」 Symbol Logo White Ver.png" alt="" onerror="this.remove()"><span class="lbl">No Signal</span></div>
+            <div class="ph-empty"><img src="「ARCH」 Symbol Logo White Ver.png" alt="" onerror="this.remove()"><span class="lbl">No Signal</span><small class="nocap">눌러서 사진 넣기</small></div>
             <i class="bk a"></i><i class="bk b"></i><i class="bk c"></i><i class="bk d"></i>
             <span class="ztag nocap" id="ztB">x1.0</span>
-            <div class="zui nocap"><button data-z="-1">−</button><button data-z="0">↺</button><button data-z="1">+</button></div>
+            <div class="zui nocap"><button data-z="up" title="사진 바꾸기"><svg viewBox="0 0 12 12" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M6 8.5V2M3.5 4.5L6 2l2.5 2.5M2 10h8"/></svg></button><button data-z="-1">−</button><button data-z="0">↺</button><button data-z="1">+</button></div>
           </div>
           <div class="s-meta"><span class="lbl">Subject B</span><span class="s-role" id="roleB">GUIDE</span></div>
           <div class="s-name" id="nameB">미상</div>
@@ -465,7 +470,7 @@ body.ready #side{transition:opacity .9s var(--ease) .25s,transform .9s var(--eas
       </div>
     </div>
 
-    <div class="st-bot"><div id="evlog"></div><div class="lbl" id="st-hint">Wheel to zoom · Drag photo to reposition</div></div>
+    <div class="st-bot"><div id="evlog"></div><div class="lbl" id="st-hint">Click frame to add photo · Wheel to zoom · Drag to move</div></div>
   </section>
 
   <aside id="side">
@@ -672,7 +677,8 @@ function setupPhoto(id){
   box.addEventListener('dblclick',()=>P.fit());
   box.addEventListener('dragover',e=>e.preventDefault());
   box.addEventListener('drop',e=>{e.preventDefault();loadPhoto(id,e.dataTransfer.files[0]);});
-  box.querySelectorAll('.zui button').forEach(b=>b.addEventListener('click',()=>{const z=+b.dataset.z;if(!z)P.fit();else P.zoomAt(P.s+z*.3,N/2,N/2);}));
+  box.querySelectorAll('.zui button').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.z==='up'){$('f'+id).click();return;}const z=+b.dataset.z;if(!z)P.fit();else P.zoomAt(P.s+z*.3,N/2,N/2);}));
+  box.addEventListener('click',e=>{if(!P.img&&!e.target.closest('button'))$('f'+id).click();});
 }
 function loadPhoto(id,f){
   if(!f||!/^image\//.test(f.type)){toast('IMAGE FILES ONLY');return;}
@@ -686,17 +692,18 @@ function clearPhoto(id){const P=PH[id];P.img=null;P.src='';P.draw();$('ph'+id).c
 /* ═════ CORE CANVAS ═════ */
 const CV=$('coreCv'),CX=CV.getContext('2d');let CW=0,CH=0;const WAVE={sync:null,shown:0,jit:0};
 function sizeCore(){const r=CV.getBoundingClientRect(),d=Math.min(2,devicePixelRatio||1);if(!r.width)return;CW=r.width;CH=r.height;CV.width=Math.round(CW*d);CV.height=Math.round(CH*d);CX.setTransform(d,0,0,d,0,0);}
-function drawCore(t,c=CX,W_=CW,H_=CH,css=null){
+function drawCore(t,c=CX,W_=CW,H_=CH,css=null,still=false){
   const W=W_,H=H_;if(!W)return;const cx=W/2,cy=H/2,R=Math.min(W,H);
   c.clearRect(0,0,W,H);c.lineWidth=1;
-  [[.36,.1,t*.00012,0],[.27,.14,-t*.0002,1],[.47,.06,t*.00007,2]].forEach(([k,a,rot,i])=>{
-    c.save();c.translate(cx,cy);c.rotate(rot);c.strokeStyle=`rgba(255,255,255,${a})`;c.setLineDash(i===1?[2,5]:i===2?[1,9]:[]);
-    c.beginPath();c.arc(0,0,R*k,0,Math.PI*2);c.stroke();c.setLineDash([]);
-    c.strokeStyle=`rgba(255,255,255,${a*3})`;c.beginPath();c.arc(0,0,R*k,0,Math.PI*.3);c.stroke();c.restore();});
-  c.save();c.translate(cx,cy);c.rotate(t*.0011);
-  const g=c.createLinearGradient(0,0,R*.47,0);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(1,'rgba(255,255,255,.3)');
-  c.strokeStyle=g;c.beginPath();c.moveTo(0,0);c.lineTo(R*.47,0);c.stroke();c.restore();
-  const s=WAVE.sync==null?null:WAVE.shown/100,y0=H*.865,amp=H*.06;
+  const rr=Math.max(R*.42,132);
+  [[1,.16,t*.00012,0],[.9,.1,-t*.0002,1],[1.13,.07,t*.00007,2]].forEach(([k,a,rot,i])=>{
+    c.save();c.translate(cx,cy);c.rotate(rot);c.strokeStyle=`rgba(255,255,255,${a})`;c.setLineDash(i===1?[2,6]:i===2?[1,9]:[]);
+    c.beginPath();c.arc(0,0,rr*k,0,Math.PI*2);c.stroke();c.setLineDash([]);
+    c.strokeStyle=`rgba(255,255,255,${Math.min(.6,a*3)})`;c.beginPath();c.arc(0,0,rr*k,0,Math.PI*.3);c.stroke();c.restore();});
+  /* rotating tick on the outer band only (never crosses the text) */
+  if(!still){const sa=t*.0011;c.save();c.translate(cx,cy);c.rotate(sa);c.strokeStyle='rgba(255,255,255,.55)';c.lineWidth=1.2;
+  c.beginPath();c.moveTo(rr*.9,0);c.lineTo(rr*1.13,0);c.stroke();c.restore();}
+  const s=WAVE.sync==null?null:WAVE.shown/100,amp=Math.min(H*.05,15),y0=H-amp-16;
   c.strokeStyle='rgba(255,255,255,.1)';c.beginPath();c.moveTo(0,y0);c.lineTo(W,y0);c.stroke();
   css=css||getComputedStyle($('report'));const c1=css.getPropertyValue('--c1').trim()||'#fff',c2=css.getPropertyValue('--c2').trim()||'#fff';
   const wave=(col,ph,fr,dash)=>{c.save();c.strokeStyle=col;c.globalAlpha=.9;c.lineWidth=1.3;if(dash)c.setLineDash([4,4]);c.beginPath();
@@ -750,6 +757,7 @@ function spawnAlert(n=0){
   el.style.top=Math.round(rp.clientHeight*rows[n%3]+(Math.random()-.5)*30)+'px';
   el.innerHTML=`<div class="al-h"><span>SYSTEM ALERT</span><button aria-label="close">×</button></div><div class="al-b"><b>${a[0]}</b>${a[1]}</div>`;
   el.querySelector('button').addEventListener('click',()=>el.remove());box.appendChild(el);
+  setTimeout(()=>{el.classList.add('fade');setTimeout(()=>el.remove(),1700);},3200+n*500);
 }
 
 /* ═════ DIAGNOSIS ═════ */
@@ -854,7 +862,7 @@ async function saveReport(){
     {const st=cl.querySelector('#status');if(st)st.textContent=LAST?LAST.status:'SYSTEM STANDBY';}
     await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
     const ce=cl.querySelector('.core'),cc=cl.querySelector('canvas#coreCv'),cr=ce.getBoundingClientRect(),w=Math.round(cr.width),h=Math.round(cr.height);
-    cc.width=w*2;cc.height=h*2;const x=cc.getContext('2d');x.setTransform(2,0,0,2,0,0);drawCore(performance.now(),x,w,h,getComputedStyle(cl));
+    cc.width=w*2;cc.height=h*2;const x=cc.getContext('2d');x.setTransform(2,0,0,2,0,0);drawCore(performance.now(),x,w,h,getComputedStyle(cl),true);
     const out=await html2canvas(cl,{backgroundColor:'#030303',scale:2,useCORS:true,logging:false,ignoreElements:el=>location.protocol==='file:'&&el.tagName==='IMG'});
     const name=((SUB.A.name||'A')+'_'+(SUB.B.name||'B')).replace(/[\\/:*?"<>|]+/g,'_');
     download(out.toDataURL('image/png'),`ARCH_SYNC_${name}_${LAST?LAST.sync+'P':'STANDBY'}.png`);
